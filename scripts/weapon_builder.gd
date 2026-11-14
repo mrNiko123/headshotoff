@@ -10,7 +10,7 @@ const MeshKit = preload("res://scripts/mesh_kit.gd")
 
 
 
-const AWP_SCENE: = preload("res://models/AWP.fbx")
+const AWP_SCENE: = preload("res://models/AWP.obj")
 
 const AWP_TEXTURE: = preload("res://models/textures/RC4qv11Y.png")
 const AWP_SKIN_SHADER: = preload("res://shaders/awp_skin.gdshader")
@@ -70,7 +70,7 @@ const RIFLE_VIEW_DROP: = 0.11
 
 
 
-const BUTTERFLY_SCENE: = preload("res://models/Butterfly.fbx")
+const BUTTERFLY_SCENE: = preload("res://knife/Butterfly.obj")
 const BUTTERFLY_SCALE: = 0.105
 
 
@@ -87,7 +87,7 @@ const BUTTERFLY_SCALE: = 0.105
 
 const KNIFE_MODELS: = {
 	"bayonet": {
-		"scene": preload("res://knife/Bayonet.fbx"), 
+		"scene": preload("res://knife/Bayonet.obj"), 
 		"texture": preload("res://knife/Bayonet_knife_Color.png"), 
 
 
@@ -98,18 +98,18 @@ const KNIFE_MODELS: = {
 		"grip": 0.07, 
 	}, 
 	"karambit": {
-		"scene": preload("res://knife/Karambit.fbx"), 
+		"scene": preload("res://knife/Karambit.obj"), 
 		"texture": preload("res://knife/Krambit_knife_Color.png"), 
 		"length": 0.38, "roughness": 0.36, "metallic": 0.4, 
 		"grip": 0.22, "grip_y": 0.82, 
 	}, 
 	"skeleton": {
-		"scene": preload("res://knife/Skeleton.fbx"), 
+		"scene": preload("res://knife/Skeleton.obj"), 
 		"texture": preload("res://knife/Skeleton_knife_color.png"), 
 		"length": 0.46, "roughness": 0.32, "metallic": 0.46, 
 	}, 
 	"dagger": {
-		"scene": preload("res://knife/Dagger.fbx"), 
+		"scene": preload("res://knife/Dagger.obj"), 
 		"texture": preload("res://knife/Tdagger_color.png"), 
 		"length": 0.46, "roughness": 0.38, "metallic": 0.38, "grip": 0.68, 
 	}, 
@@ -118,7 +118,7 @@ const KNIFE_MODELS: = {
 
 
 	"combat": {
-		"scene": preload("res://models/CombatKnife.fbx"), 
+		"scene": preload("res://knife/CombatKnife.obj"), 
 		"texture": preload("res://models/Combat_knife_Color.png"), 
 		"length": 0.44, "roughness": 0.4, "metallic": 0.34, 
 		"grip": 0.42, "grip_y": 0.55, 
@@ -135,7 +135,7 @@ const KNIFE_MODELS: = {
 
 
 	"nomad": {
-		"scene": preload("res://knife/Nomad (2).fbx"), 
+		"scene": preload("res://knife/Nomad.obj"), 
 		"texture": preload("res://knife/Nomad_knife_Color (2).png"), 
 		"length": 0.5, "roughness": 0.34, "metallic": 0.42, 
 		"albedo_gain": 1.7, "detail_grain": true, "cull_back": true, 
@@ -251,8 +251,15 @@ static func _awp_material(skin: Dictionary, overlay: bool) -> ShaderMaterial:
 	return mat
 
 
+# OBJ-модели импортируются как Mesh (а не как сцена) — общий помощник.
+static func _mesh_node(mesh: Mesh) -> Node3D:
+	var node: = MeshInstance3D.new()
+	node.mesh = mesh
+	return node
+
+
 static func _build_awp(root: Node3D, skin: Dictionary, overlay: bool) -> void :
-	var model: = AWP_SCENE.instantiate()
+	var model: = _mesh_node(AWP_SCENE)
 	var pivot: = Node3D.new()
 	pivot.name = "AwpModel"
 	pivot.rotation_degrees = Vector3(0.0, AWP_MODEL_YAW, 0.0)
@@ -859,7 +866,9 @@ static func _build_butterfly(root: Node3D, skin: Dictionary, overlay: bool) -> v
 		handle_mat.uv1_scale = Vector3(2.0, 2.0, 2.0)
 		handle_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
-	var model: = BUTTERFLY_SCENE.instantiate()
+	var model: = _mesh_node(BUTTERFLY_SCENE)
+	# OBJ запёк поворот корня FBX (-90°X) — ставим модель обратно вертикально.
+	model.rotation_degrees = Vector3(90.0, 0.0, 0.0)
 	var pivot: = Node3D.new()
 	pivot.name = "KnifePivot"
 
@@ -1099,8 +1108,10 @@ static func _apply_knife_material(node: Node, mat: Material) -> void :
 static func _build_imported_knife(root: Node3D, skin: Dictionary, overlay: bool, 
 		model_id: String) -> void :
 	var info: Dictionary = KNIFE_MODELS[model_id]
-	var scene: PackedScene = info["scene"]
-	var model: = scene.instantiate() as Node3D
+	var mesh: Mesh = info["scene"] as Mesh
+	var model: = _mesh_node(mesh)
+	# OBJ запёк поворот корня FBX (-90°X) — ставим модель обратно вертикально.
+	model.rotation_degrees = Vector3(90.0, 0.0, 0.0)
 	if model == null:
 		return
 

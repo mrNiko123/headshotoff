@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://r54o7s5l184v"
+path="res://.godot/imported/Karambit.obj-8015830bdf704dfa5e025ac02d7c6962.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Karambit.obj-8015830bdf704dfa5e025ac02d7c6962.mesh"]
+
+source_file="res://knife/Karambit.obj"
+dest_files=["res://.godot/imported/Karambit.obj-8015830bdf704dfa5e025ac02d7c6962.mesh", "res://.godot/imported/Karambit.obj-8015830bdf704dfa5e025ac02d7c6962.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

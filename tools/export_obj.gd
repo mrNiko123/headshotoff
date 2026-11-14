@@ -4,22 +4,22 @@ extends SceneTree
 # открывались вне Godot. Аргументов нет — список пар внутри.
 
 const PAIRS: = [
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/AWP/AWP_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/AWP/AWP_model.obj"], 
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_BUTTERFLY/Butterfly_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_BUTTERFLY/Butterfly_model.obj"], 
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_BAYONET/Bayonet_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_BAYONET/Bayonet_model.obj"], 
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_KARAMBIT/Karambit_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_KARAMBIT/Karambit_model.obj"], 
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_SKELETON/Skeleton_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_SKELETON/Skeleton_model.obj"], 
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_DAGGER/Dagger_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_DAGGER/Dagger_model.obj"], 
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_COMBAT/CombatKnife_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_COMBAT/CombatKnife_model.obj"], 
-	["C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_NOMAD/Nomad_model.scn", 
-		"C:/Users/user/Desktop/HEADSHOT ОРУЖИЕ/KNIFE_NOMAD/Nomad_model.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/AWP.fbx-43dbd6a2f743dacabdaccbb64a3b98cc.scn", 
+		"C:/Users/user/Desktop/Headshot/models/AWP.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/Butterfly.fbx-dd8acfd7239e41899d7ab876a68f806d.scn", 
+		"C:/Users/user/Desktop/Headshot/knife/Butterfly.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/Bayonet.fbx-12a6d9fd14c8c65a1cbc286f48be21db.scn", 
+		"C:/Users/user/Desktop/Headshot/knife/Bayonet.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/Karambit.fbx-1b5f0b358e57f9340fb3f3294b9e03ab.scn", 
+		"C:/Users/user/Desktop/Headshot/knife/Karambit.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/Skeleton.fbx-0cf904758e855c06ce3bedf0798b527a.scn", 
+		"C:/Users/user/Desktop/Headshot/knife/Skeleton.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/Dagger.fbx-7943b409bb86b7a30797152d1a123ad3.scn", 
+		"C:/Users/user/Desktop/Headshot/knife/Dagger.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/CombatKnife.fbx-a5ff27a53d7e490e0582da4311dab7e8.scn", 
+		"C:/Users/user/Desktop/Headshot/knife/CombatKnife.obj"], 
+	["C:/Users/user/Desktop/Headshot/.godot/imported/Nomad (2).fbx-849b285cc27723e5a78df652107eec6b.scn", 
+		"C:/Users/user/Desktop/Headshot/knife/Nomad.obj"], 
 ]
 
 
