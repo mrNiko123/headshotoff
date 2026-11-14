@@ -114,13 +114,20 @@ func _write_mesh_obj(mesh: Mesh, xform: Transform3D, body: PackedStringArray) ->
 			for uv in uvs:
 				body.append("vt %.5f %.5f" % [uv.x, uv.y])
 		body.append("usemtl skin")
+		# Зеркальная трансформация (отрицательный детерминант) переворачивает
+		# обход треугольников — иначе модель рендерится «наизнанку» (x-ray).
+		var flip: = xform.basis.determinant() < 0.0
 		if index.is_empty():
 			for i in verts.size():
 				body.append(_face(i, i, i, not uvs.is_empty()))
 		else:
 			for i in range(0, index.size(), 3):
-				body.append(_face(index[i], index[i + 1], index[i + 2], 
-					not uvs.is_empty()))
+				if flip:
+					body.append(_face(index[i], index[i + 2], index[i + 1], 
+						not uvs.is_empty()))
+				else:
+					body.append(_face(index[i], index[i + 1], index[i + 2], 
+						not uvs.is_empty()))
 		_v_offset += verts.size()
 		_n_offset += normals.size()
 
