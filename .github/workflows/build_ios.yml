@@ -32,13 +32,37 @@ jobs:
           set -o pipefail
           Godot.app/Contents/MacOS/Godot --headless --path . --import
 
-      - name: Export iOS (.ipa)
+      # Godot выгружает Xcode-проект, но его собственный шаг подписи на CI
+      # без Apple-аккаунта падает — разрешаем это (continue-on-error),
+      # сам Xcode-проект уже создан и используется ниже.
+      - name: Export Xcode project (Godot)
+        continue-on-error: true
         run: |
-          set -o pipefail
           mkdir -p export/ios
           Godot.app/Contents/MacOS/Godot --headless --path . \
             --export-release "HEADSHOT OFF iOS" \
-            export/ios/HEADSHOT_OFF.ipa
+            export/ios/HEADSHOT_OFF.ipa || true
+
+      - name: Build unsigned .ipa (Xcode)
+        run: |
+          set -o pipefail
+          ls export/ios/HEADSHOT_OFF.xcodeproj > /dev/null || { echo "Xcode project missing"; exit 1; }
+          xcodebuild -project export/ios/HEADSHOT_OFF.xcodeproj \
+            -scheme HEADSHOT_OFF \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=ios" \
+            -derivedDataPath export/ios/build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tail -25
+          APP=$(find export/ios/build/Build/Products -maxdepth 3 -name "*.app" | head -1)
+          [ -n "$APP" ] || { echo "App bundle missing"; exit 1; }
+          mkdir -p export/ios/Payload
+          cp -R "$APP" export/ios/Payload/
+          cd export/ios
+          zip -qry HEADSHOT_OFF.ipa Payload
+          cd ../..
+          ls -la export/ios/HEADSHOT_OFF.ipa
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
