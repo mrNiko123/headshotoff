@@ -14,7 +14,9 @@ func _ready() -> void :
 	console.execute("host_timescale 1.5")
 	console.execute("host_timescale 999")
 	console.execute("sensitivity")
-	console.execute("map")
+	console.execute("fps_max=60")
+	console.execute("fps_max = 30")
+	console.execute("fps_max")
 	console.execute("map nosuchmap")
 	console.execute("find crosshair")
 	console.execute("status")
@@ -25,6 +27,7 @@ func _ready() -> void :
 	print("TEST showfps=", Settings.show_fps)
 	print("TEST timescale=", Engine.time_scale)
 	print("TEST map=", Settings.map_id)
+	print("TEST fpsmax=", Settings.fps_limit)
 	print("TEST cheats=", console._cheats)
 	# восстановление
 	Settings.mouse_sensitivity = old_sens

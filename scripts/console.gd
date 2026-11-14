@@ -215,11 +215,23 @@ func _commands() -> Dictionary:
 
 
 func execute(raw: String) -> void :
-	var parts: = raw.split(" ", false)
-	if parts.is_empty():
+	var text: = raw.strip_edges()
+	if text.is_empty():
 		return
-	var name: = parts[0].to_lower()
-	var args: = parts.slice(1)
+	var parts: = text.split(" ", false)
+	var name: = ""
+	var args: = []
+	# CS2-стиль: "name 1", "name=1" и "name = 1" — все варианты валидны.
+	if "=" in parts[0]:
+		var eq: = parts[0].split("=", true, 1)
+		name = str(eq[0]).to_lower()
+		if eq.size() > 1 and not str(eq[1]).strip_edges().is_empty():
+			args.append(str(eq[1]).strip_edges())
+	else:
+		name = str(parts[0]).to_lower()
+	for token in parts.slice(1):
+		if str(token) != "=":
+			args.append(str(token))
 	var commands: = _commands()
 
 	if commands.has(name):
