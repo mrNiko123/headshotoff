@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://barcticcap01"]
+
+[ext_resource type="Script" uid="uid://bosy7i0n8cx03" path="res://arctic_cap.gd" id="1"]
+
+[node name="ArcticCap" type="Node" unique_id=407821163]
+script = ExtResource("1")

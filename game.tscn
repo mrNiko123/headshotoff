@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://b8bp3wb3wq2gu" path="res://scripts/game.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/arena_yard.tscn" id="2"]
+[ext_resource type="Script" uid="uid://dlppxf3pgw8pm" path="res://scripts/player.gd" id="3"]
+[ext_resource type="Script" uid="uid://bc44v4s1esotj" path="res://scripts/viewmodel.gd" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="5"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.38
+height = 1.8
+
+[node name="Game" type="Node3D" unique_id=1836093506]
+script = ExtResource("1")
+
+[node name="Arena" parent="." unique_id=1941339434 instance=ExtResource("2")]
+
+[node name="Mannequins" type="Node3D" parent="." unique_id=990480819]
+
+[node name="Player" type="CharacterBody3D" parent="." unique_id=111819931]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 16)
+script = ExtResource("3")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=280435848]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="Head" type="Node3D" parent="Player" unique_id=1063064408]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Player/Head" unique_id=1590534527]
+current = true
+fov = 90.0
+near = 0.01
+far = 240.0
+
+[node name="Viewmodel" type="Node3D" parent="Player/Head/Camera3D" unique_id=1180927303]
+script = ExtResource("4")
+
+[node name="HUD" parent="." unique_id=1203308842 instance=ExtResource("5")]

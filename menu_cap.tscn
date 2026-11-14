@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bmenucap01"]
+
+[ext_resource type="Script" uid="uid://bfagytqrsxafb" path="res://menu_cap.gd" id="1"]
+
+[node name="MenuCap" type="Node" unique_id=1316625135]
+script = ExtResource("1")

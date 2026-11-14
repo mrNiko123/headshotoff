@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bawpcap01"]
+
+[ext_resource type="Script" uid="uid://cioctel3i4c0n" path="res://awp_cap.gd" id="1"]
+
+[node name="AwpCap" type="Node" unique_id=1636048484]
+script = ExtResource("1")

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bscopecap01"]
+
+[ext_resource type="Script" uid="uid://bvfneoocgh0ej" path="res://scope_cap.gd" id="1"]
+
+[node name="ScopeCap" type="Node" unique_id=1221394755]
+script = ExtResource("1")

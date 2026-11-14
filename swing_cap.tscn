@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cswingcap01"]
+
+[ext_resource type="Script" uid="uid://7etwmfbg608a" path="res://swing_cap.gd" id="1"]
+
+[node name="SwingCap" type="Node" unique_id=1326930452]
+script = ExtResource("1")

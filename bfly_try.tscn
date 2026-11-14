@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bgdkdgfbgu6ba" path="res://bfly_try.gd" id="1"]
+
+[node name="BflyTry" type="Node" unique_id=1782012353]
+script = ExtResource("1")

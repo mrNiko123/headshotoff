@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://c3073yo5qf3xc" path="res://probe_bf.gd" id="1"]
+
+[node name="ProbeBf" type="Node" unique_id=1450699166]
+script = ExtResource("1")

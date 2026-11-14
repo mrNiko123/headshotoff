@@ -1,0 +1,41 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://ciug2btl7vw6q" path="res://scripts/duel_game.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/arena_crusher.tscn" id="2"]
+[ext_resource type="Script" uid="uid://dlppxf3pgw8pm" path="res://scripts/player.gd" id="3"]
+[ext_resource type="Script" uid="uid://bc44v4s1esotj" path="res://scripts/viewmodel.gd" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="5"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.38
+height = 1.8
+
+[node name="Duel" type="Node3D" unique_id=964056244]
+script = ExtResource("1")
+
+[node name="Arena" parent="." unique_id=824682053 instance=ExtResource("2")]
+
+[node name="Bots" type="Node3D" parent="." unique_id=887026383]
+
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1768006175]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0.06, 0)
+collision_mask = 9
+script = ExtResource("3")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=409574751]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="Head" type="Node3D" parent="Player" unique_id=783065438]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Player/Head" unique_id=1911385551]
+current = true
+fov = 90.0
+near = 0.01
+far = 240.0
+
+[node name="Viewmodel" type="Node3D" parent="Player/Head/Camera3D" unique_id=1589545374]
+script = ExtResource("4")
+
+[node name="HUD" parent="." unique_id=575847768 instance=ExtResource("5")]

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cftsodvbtf7ee"]
+
+[ext_resource type="Script" uid="uid://duvjly8i8rwdt" path="res://probe_awp_view.gd" id="1"]
+
+[node name="ProbeAwpView" type="Node3D" unique_id=773589079]
+script = ExtResource("1")

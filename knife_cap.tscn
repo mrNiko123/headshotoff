@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bknifecap01"]
+
+[ext_resource type="Script" uid="uid://cchh0n0g55b5n" path="res://knife_cap.gd" id="1"]
+
+[node name="KnifeCap" type="Node" unique_id=1218066850]
+script = ExtResource("1")

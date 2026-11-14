@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://brao4oe1313om"]
+
+[ext_resource type="Script" uid="uid://d2nhotk32vorh" path="res://karambit_cap.gd" id="1"]
+
+[node name="KarambitCap" type="Node" unique_id=1096175607]
+script = ExtResource("1")

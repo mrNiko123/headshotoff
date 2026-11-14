@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bprobeawp01"]
+
+[ext_resource type="Script" uid="uid://ca0kewcn85yks" path="res://probe_awp.gd" id="1"]
+
+[node name="ProbeAwp" type="Node" unique_id=1323653553]
+script = ExtResource("1")

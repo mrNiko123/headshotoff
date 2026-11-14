@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bcheckcap01"]
+
+[ext_resource type="Script" uid="uid://cxfdudgy7rk8i" path="res://check_cap.gd" id="1"]
+
+[node name="CheckCap" type="Node" unique_id=1733156140]
+script = ExtResource("1")

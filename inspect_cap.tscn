@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cinspectcap01"]
+
+[ext_resource type="Script" uid="uid://c2ppx6v8ursux" path="res://inspect_cap.gd" id="1"]
+
+[node name="InspectCap" type="Node" unique_id=1654426514]
+script = ExtResource("1")

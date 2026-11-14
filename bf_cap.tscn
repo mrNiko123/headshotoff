@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://citxnsb7wf7ca" path="res://bf_cap.gd" id="1"]
+
+[node name="BfCap" type="Node" unique_id=1467633487]
+script = ExtResource("1")
