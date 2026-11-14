@@ -1,0 +1,56 @@
+newmtl steel
+Ka 0 0 0
+Kd 0.74 0.75 0.78
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+
+newmtl steel_dark
+Ka 0 0 0
+Kd 0.55 0.56 0.6
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+
+newmtl black
+Ka 0 0 0
+Kd 0.05 0.05 0.06
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+
+newmtl grip
+Ka 0 0 0
+Kd 0.08 0.08 0.09
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+
+newmtl grip_hi
+Ka 0 0 0
+Kd 0.16 0.16 0.18
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+
+newmtl engrave
+Ka 0 0 0
+Kd 0.38 0.39 0.43
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+
+newmtl white
+Ka 0 0 0
+Kd 0.92 0.92 0.92
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+
+newmtl grip_bump
+Ka 0 0 0
+Kd 0.24 0.24 0.27
+Ks 0.05 0.05 0.05
+Ns 10
+illum 1
+

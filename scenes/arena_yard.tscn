@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/map_arena.gd" id="1"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_yard"]
+sky_top_color = Color(0.32, 0.46, 0.62, 1)
+sky_horizon_color = Color(0.78, 0.82, 0.72, 1)
+sky_curve = 0.12
+ground_bottom_color = Color(0.26, 0.3, 0.27, 1)
+ground_horizon_color = Color(0.55, 0.62, 0.52, 1)
+sun_angle_max = 0.0
+sun_curve = 0.1
+
+[sub_resource type="Sky" id="Sky_yard"]
+sky_material = SubResource("SkyMat_yard")
+
+[sub_resource type="Environment" id="Env_yard"]
+background_mode = 2
+sky = SubResource("Sky_yard")
+ambient_light_source = 3
+ambient_light_energy = 0.85
+reflected_light_source = 2
+tonemap_mode = 2
+tonemap_exposure = 0.96
+fog_enabled = true
+fog_light_color = Color(0.62, 0.72, 0.66, 1)
+fog_light_energy = 0.35
+fog_density = 0.0014
+fog_aerial_perspective = 0.3
+fog_sky_affect = 0.1
+
+[node name="Arena" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_yard")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8290376, 0.3741731, -0.4155613, 0, 0.7431448, 0.6691306, 0.5591929, -0.55473447, 0.616095, 0, 0, 0)
+light_color = Color(1, 0.97, 0.92, 1)
+light_energy = 1.15
+
+[node name="Bounce" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.84804803, -0.24878205, 0.46789098, 0, 0.88294756, 0.46947157, -0.5299193, 0.39813444, -0.7487819, 0, 0, 0)
+light_color = Color(0.55, 0.68, 0.6, 1)
+light_energy = 0.3
+
+[node name="Map" type="Node3D" parent="."]
+script = ExtResource("1")
+layout = "yard"

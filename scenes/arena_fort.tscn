@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/map_arena.gd" id="1"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_fort"]
+sky_top_color = Color(0.22, 0.3, 0.44, 1)
+sky_horizon_color = Color(0.88, 0.72, 0.52, 1)
+sky_curve = 0.13
+ground_bottom_color = Color(0.2, 0.19, 0.17, 1)
+ground_horizon_color = Color(0.55, 0.46, 0.36, 1)
+sun_angle_max = 0.0
+sun_curve = 0.1
+
+[sub_resource type="Sky" id="Sky_fort"]
+sky_material = SubResource("SkyMat_fort")
+
+[sub_resource type="Environment" id="Env_fort"]
+background_mode = 2
+sky = SubResource("Sky_fort")
+ambient_light_source = 3
+ambient_light_energy = 0.86
+reflected_light_source = 2
+tonemap_mode = 2
+tonemap_exposure = 0.97
+fog_enabled = true
+fog_light_color = Color(0.72, 0.6, 0.46, 1)
+fog_light_energy = 0.34
+fog_density = 0.0014
+fog_aerial_perspective = 0.28
+fog_sky_affect = 0.1
+
+[node name="Arena" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_fort")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8480481, 0.381192, -0.36811286, 0, 0.6946584, 0.7193398, 0.52991927, -0.6100347, 0.58910376, 0, 0, 0)
+light_color = Color(1, 0.9, 0.76, 1)
+light_energy = 1.2
+
+[node name="Bounce" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.8290375, -0.24513409, 0.50259936, 0, 0.89879405, 0.43837115, -0.559193, 0.36342612, -0.74513394, 0, 0, 0)
+light_color = Color(0.6, 0.55, 0.45, 1)
+light_energy = 0.3
+
+[node name="Map" type="Node3D" parent="."]
+script = ExtResource("1")
+layout = "fort"

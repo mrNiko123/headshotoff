@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/map_arena.gd" id="1"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_mesa"]
+sky_top_color = Color(0.4, 0.52, 0.66, 1)
+sky_horizon_color = Color(0.94, 0.72, 0.48, 1)
+sky_curve = 0.14
+ground_bottom_color = Color(0.3, 0.24, 0.18, 1)
+ground_horizon_color = Color(0.68, 0.52, 0.36, 1)
+sun_angle_max = 0.0
+sun_curve = 0.1
+
+[sub_resource type="Sky" id="Sky_mesa"]
+sky_material = SubResource("SkyMat_mesa")
+
+[sub_resource type="Environment" id="Env_mesa"]
+background_mode = 2
+sky = SubResource("Sky_mesa")
+ambient_light_source = 3
+ambient_light_energy = 0.9
+reflected_light_source = 2
+tonemap_mode = 2
+tonemap_exposure = 0.98
+fog_enabled = true
+fog_light_color = Color(0.78, 0.62, 0.45, 1)
+fog_light_energy = 0.32
+fog_density = 0.0012
+fog_aerial_perspective = 0.28
+fog_sky_affect = 0.1
+
+[node name="Arena" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_mesa")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8480481, 0.381192, -0.36811286, 0, 0.6946584, 0.7193398, 0.52991927, -0.6100347, 0.58910376, 0, 0, 0)
+light_color = Color(1, 0.93, 0.8, 1)
+light_energy = 1.25
+
+[node name="Bounce" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.8290375, -0.24513409, 0.50259936, 0, 0.89879405, 0.43837115, -0.559193, 0.36342612, -0.74513394, 0, 0, 0)
+light_color = Color(0.7, 0.62, 0.5, 1)
+light_energy = 0.28
+
+[node name="Map" type="Node3D" parent="."]
+script = ExtResource("1")
+layout = "mesa"

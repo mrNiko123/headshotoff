@@ -27,18 +27,11 @@ jobs:
           unzip -q templates.tpz -d /tmp/tpl
           cp /tmp/tpl/templates/* "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable/"
 
-      - name: Import resources
-        run: |
-          set -o pipefail
-          Godot.app/Contents/MacOS/Godot --headless --path . --import
-
       - name: Export iOS (.ipa)
         run: |
-          set -o pipefail
-          mkdir -p export/ios
-          Godot.app/Contents/MacOS/Godot --headless --path . \
-            --export-release "HEADSHOT OFF iOS" \
-            export/ios/HEADSHOT_OFF.ipa
+          Godot.app/Contents/MacOS/Godot --headless \
+            --path . --export-release "HEADSHOT OFF iOS" \
+            export/ios/HEADSHOT_OFF.ipa 2>&1 | tail -40
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
