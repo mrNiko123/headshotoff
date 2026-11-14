@@ -35,6 +35,7 @@ jobs:
       - name: Export iOS (.ipa)
         run: |
           set -o pipefail
+          mkdir -p export/ios
           Godot.app/Contents/MacOS/Godot --headless --path . \
             --export-release "HEADSHOT OFF iOS" \
             export/ios/HEADSHOT_OFF.ipa
