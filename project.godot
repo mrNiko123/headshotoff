@@ -24,6 +24,7 @@ config/icon="res://assets/brand/logo_knife.png"
 Settings="*res://scripts/settings.gd"
 Sfx="*res://scripts/sfx.gd"
 Mobile="*res://scripts/mobile_controls.gd"
+Console="*res://scripts/console.gd"
 
 [display]
 

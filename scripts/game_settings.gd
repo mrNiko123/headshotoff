@@ -477,6 +477,14 @@ func _render_screen() -> void :
 
 	keys_toggle.visible = not mobile
 	hud_toggles.add_child(keys_toggle)
+	var console_button: = Button.new()
+	console_button.text = "КОНСОЛЬ [`]"
+	console_button.focus_mode = Control.FOCUS_NONE
+	console_button.pressed.connect(func() -> void :
+		var console: = get_node_or_null("/root/Console")
+		if console != null:
+			console.call("open_console"))
+	hud_toggles.add_child(console_button)
 	_body.add_child(_hint(
 		"FPS — счётчик кадров справа сверху. «Клавиши и мышь» — WASD, ЛКМ/ПКМ "
 		+ "и пробел слева снизу."))
