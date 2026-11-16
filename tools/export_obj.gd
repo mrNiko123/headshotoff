@@ -112,7 +112,8 @@ func _write_mesh_obj(mesh: Mesh, xform: Transform3D, body: PackedStringArray) ->
 			body.append("vn %.4f %.4f %.4f" % [wn.x, wn.y, wn.z])
 		if not uvs.is_empty():
 			for uv in uvs:
-				body.append("vt %.5f %.5f" % [uv.x, uv.y])
+				# OBJ-конвенция: V снизу; Godot при импорте перевернёт обратно.
+				body.append("vt %.5f %.5f" % [uv.x, 1.0 - uv.y])
 		body.append("usemtl skin")
 		# Зеркальная трансформация (отрицательный детерминант) переворачивает
 		# обход треугольников — иначе модель рендерится «наизнанку» (x-ray).
