@@ -273,6 +273,14 @@ static func _build_awp(root: Node3D, skin: Dictionary, overlay: bool) -> void :
 
 	var mat: = _awp_material(skin, overlay)
 	var body: MeshInstance3D = null
+	# OBJ-модель — это сам MeshInstance3D (не сцена с потомками),
+	# поэтому применяем материал и к корню, и к дочерним мешам.
+	var awp_mesh: = model as MeshInstance3D
+	if awp_mesh != null:
+		awp_mesh.material_override = mat
+		awp_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		awp_mesh.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
+		body = awp_mesh
 	for child in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh: = child as MeshInstance3D
 		mesh.material_override = mat

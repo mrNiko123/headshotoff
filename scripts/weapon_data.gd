@@ -34,11 +34,11 @@ const WEAPONS: = {
 
 			"default": {
 				"name": "CLASSIC", "rarity": "common", 
-				"body": Color(0.13, 0.28, 0.4, 1.0), 
-				"accent": Color(0.4, 0.86, 0.78, 1.0), 
-				"grip": Color(0.08, 0.12, 0.16, 1.0), 
-				"hue": 0.55, 
-				"saturation": 1.0, 
+				"body": Color(0.22, 0.36, 0.2, 1.0), 
+				"accent": Color(0.55, 0.82, 0.36, 1.0), 
+				"grip": Color(0.1, 0.14, 0.09, 1.0), 
+				"hue": 0.0, 
+				"saturation": 1.08, 
 				"value": 1.0, 
 			}, 
 			"asiimov": {

@@ -1,0 +1,7 @@
+﻿[gd_scene load_steps=2 format=3 uid="uid://ccheckmap001"]
+
+[ext_resource type="Script" path="res://tools/check_map.gd" id="1"]
+
+[node name="CheckMap" type="Node"]
+script = ExtResource("1")
+
