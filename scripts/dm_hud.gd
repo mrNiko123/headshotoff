@@ -82,6 +82,7 @@ func _ready() -> void :
 	_build_scoreboard()
 	_build_result()
 	_build_online_counter()
+	_build_br_status()
 
 
 func setup(player_name: String, online: = -1) -> void :
@@ -891,3 +892,64 @@ func _fmt(value: int) -> String:
 		if count % 3 == 0 and i > 0:
 			out = " " + out
 	return out
+
+
+# ---------- БАТЛ РОЯЛЬ: панель статуса (живые / зона) ----------
+
+var _br_panel: PanelContainer
+var _br_alive_label: Label
+var _br_zone_label: Label
+var _br_zone_timer: Label
+
+
+func _build_br_status() -> void :
+	_br_panel = PanelContainer.new()
+	_br_panel.name = "BrStatus"
+	_br_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_br_panel.offset_left = 16.0
+	_br_panel.offset_top = 14.0
+	_br_panel.offset_right = 246.0
+	_br_panel.offset_bottom = 118.0
+	_br_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_br_panel.add_theme_stylebox_override("panel", 
+		_box(Color(0.02, 0.03, 0.05, 0.9), Color(0.55, 0.3, 1.0, 0.7), 1, 12, 
+		10.0))
+	_br_panel.visible = false
+	_root.add_child(_br_panel)
+
+	var column: = VBoxContainer.new()
+	column.add_theme_constant_override("separation", 2)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_br_panel.add_child(column)
+
+	_br_alive_label = _label("ЖИВЫХ: 20/20", 20, TEXT, 700, true)
+	_br_alive_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_br_alive_label)
+
+	_br_zone_label = _label("ЗОНА СЖИМАЕТСЯ", 12, 
+		Color(0.78, 0.55, 1.0, 1.0), 700, true)
+	_br_zone_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_br_zone_label)
+
+	_br_zone_timer = _label("—", 24, ACCENT_BRIGHT, 700, true)
+	_br_zone_timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_br_zone_timer)
+
+
+func set_br_status(alive: int, total: int, zone_text: String, 
+		timer_text: String) -> void :
+	if _br_panel == null:
+		_build_br_status()
+	_br_alive_label.text = "ЖИВЫХ: %d/%d" % [alive, total]
+	_br_zone_label.text = zone_text
+	_br_zone_timer.text = timer_text
+
+
+func set_br_panel_visible(on: bool) -> void :
+	if _br_panel != null:
+		_br_panel.visible = on
+
+
+func set_timer_visible(on: bool) -> void :
+	if _timer_panel != null:
+		_timer_panel.visible = on
