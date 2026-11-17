@@ -12,7 +12,6 @@ const PAIRS: = [
 	["ak47", "classic"], ["ak47", "vulcan"], 
 	["m4a1", "steel"], ["m4a1", "printstream"], 
 	["deagle", "chrome"], ["deagle", "blaze"], 
-	["usp", "stock"], ["usp", "noir"], 
 	["knife", "forest"], ["knife", "lava"], 
 	["knife", "bayonet"], ["knife", "karambit"], 
 	["knife", "skeleton"], ["knife", "dagger"], 

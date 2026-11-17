@@ -42,7 +42,6 @@ const AK_SURFACE_COLORS: = [
 
 const DEAGLE_MESH: = preload(
 	"res://assets/models/deagle/chrome/deagle_chrome.obj")
-const USP_MESH: = preload("res://assets/models/usp/usp_s.obj")
 
 
 
@@ -169,8 +168,6 @@ static func build(parent: Node3D, weapon_id: String, skin_id: String, overlay: =
 		muzzle.position = _build_m4(root, skin, overlay)
 	elif weapon_id == "deagle":
 		muzzle.position = _build_deagle(root, skin, overlay)
-	elif weapon_id == "usp":
-		muzzle.position = _build_usp(root, skin, overlay)
 	else:
 		_build_awp(root, skin, overlay)
 		muzzle.position = AWP_MUZZLE
@@ -565,120 +562,6 @@ static func _build_deagle_blocks(root: Node3D, skin: Dictionary, overlay: bool) 
 	return _place_rifle(root, model, 0.0, 0.64, 0.38, 0.78, 0.32, 
 		RIFLE_VIEW_DROP, Vector3.ZERO, Vector3(0.0, 0.0, 0.06), 0.74)
 
-
-static func _build_usp(root: Node3D, skin: Dictionary, overlay: bool) -> Vector3:
-	var model: = Node3D.new()
-	model.name = "UspModel"
-
-	# Импортированная OBJ-модель USP-S: морда в +Z, глушитель на месте.
-	var holder: = Node3D.new()
-	holder.name = "UspHolder"
-	holder.rotation_degrees = Vector3(0.0, 180.0, 0.0)
-	model.add_child(holder)
-
-	var mesh: = MeshInstance3D.new()
-	mesh.name = "UspMesh"
-	var mesh_resource: = USP_MESH.duplicate() as ArrayMesh
-	mesh.mesh = mesh_resource
-	holder.add_child(mesh)
-
-	var metal_color: Color = skin.get("metal", Color(0.1, 0.1, 0.11, 1.0))
-	var frame_color: Color = skin.get("frame", Color(0.15, 0.15, 0.16, 1.0))
-	_paint_pistol_mesh(mesh_resource, metal_color, frame_color, 0.6, 0.3)
-
-	return _place_rifle(root, model, 0.0, 0.64, 0.38, 0.78, 0.32, 
-		RIFLE_VIEW_DROP, Vector3(0.0, -12.0, 4.0), 
-		Vector3(0.12, -0.02, -0.1), 0.62)
-
-
-static func _build_usp_blocks(root: Node3D, skin: Dictionary, overlay: bool) -> Vector3:
-	var model: = Node3D.new()
-	model.name = "UspModel"
-
-	# Процедурная модель USP-S: морда в +Z; глушитель-труба, чёрный матовый.
-	var holder: = Node3D.new()
-	holder.name = "UspHolder"
-	holder.rotation_degrees = Vector3(0.0, 180.0, 0.0)
-	model.add_child(holder)
-
-	var metal_color: Color = skin.get("metal", Color(0.1, 0.1, 0.11, 1.0))
-	var frame_color: Color = skin.get("frame", Color(0.15, 0.15, 0.16, 1.0))
-	var slide_mat: = StandardMaterial3D.new()
-	slide_mat.albedo_color = metal_color
-	slide_mat.metallic = 0.6
-	slide_mat.roughness = 0.42
-	slide_mat.set_meta("no_tint", true)
-	var frame_mat: = StandardMaterial3D.new()
-	frame_mat.albedo_color = frame_color
-	frame_mat.metallic = 0.3
-	frame_mat.roughness = 0.6
-	frame_mat.set_meta("no_tint", true)
-	var dark: = StandardMaterial3D.new()
-	dark.albedo_color = Color(0.055, 0.055, 0.06, 1.0)
-	dark.metallic = 0.4
-	dark.roughness = 0.55
-	dark.set_meta("no_tint", true)
-
-	# --- затвор: компактный, скошенный перед ---
-	MeshKit.block(holder, Vector3(0.048, 0.062, 0.24), 
-		Vector3(0.0, 0.06, -0.02), slide_mat)
-	MeshKit.block(holder, Vector3(0.048, 0.04, 0.025), 
-		Vector3(0.0, 0.05, 0.115), slide_mat)
-	# насечки сзади затвора
-	for side in [-1.0, 1.0]:
-		for i in 6:
-			MeshKit.block(holder, Vector3(0.004, 0.045, 0.007), 
-				Vector3(side * 0.0255, 0.058, -0.15 + float(i) * 0.012), dark)
-	# окно выброса
-	MeshKit.block(holder, Vector3(0.006, 0.03, 0.06), 
-		Vector3(0.0245, 0.068, 0.02), dark)
-
-	# --- рамка и направляющая возвратной пружины ---
-	MeshKit.block(holder, Vector3(0.042, 0.05, 0.2), 
-		Vector3(0.0, 0.0, -0.03), frame_mat)
-	MeshKit.block(holder, Vector3(0.038, 0.032, 0.05), 
-		Vector3(0.0, -0.014, 0.085), frame_mat)
-
-	# --- глушитель: труба перед дулом (морда в +Z) ---
-	MeshKit.block(holder, Vector3(0.036, 0.036, 0.17), 
-		Vector3(0.0, 0.062, 0.235), dark)
-	# фаски глушителя (кольца)
-	for ring in 3:
-		MeshKit.block(holder, Vector3(0.04, 0.04, 0.012), 
-			Vector3(0.0, 0.062, 0.185 + float(ring) * 0.075), dark)
-	# дуло глушителя (тёмный канал)
-	MeshKit.block(holder, Vector3(0.018, 0.018, 0.01), 
-		Vector3(0.0, 0.062, 0.32), dark)
-	# мушка и целик
-	MeshKit.block(holder, Vector3(0.008, 0.016, 0.01), 
-		Vector3(0.0, 0.096, -0.13), dark)
-	MeshKit.block(holder, Vector3(0.022, 0.014, 0.012), 
-		Vector3(0.0, 0.096, 0.1), dark)
-
-	# --- рукоять: круче, чем у deagle, чёрная ---
-	var grip: = MeshKit.block(holder, Vector3(0.044, 0.14, 0.055), 
-		Vector3(0.0, -0.08, -0.15), frame_mat, Vector3(22.0, 0.0, 0.0))
-	grip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	for side in [-1.0, 1.0]:
-		MeshKit.block(holder, Vector3(0.01, 0.105, 0.04), 
-			Vector3(side * 0.026, -0.082, -0.145), dark, 
-			Vector3(22.0, 0.0, 0.0))
-	MeshKit.block(holder, Vector3(0.04, 0.014, 0.052), 
-		Vector3(0.0, -0.152, -0.105), dark, Vector3(22.0, 0.0, 0.0))
-
-	# --- скоба и спусковой крючок ---
-	MeshKit.block(holder, Vector3(0.012, 0.007, 0.055), 
-		Vector3(0.0, -0.052, -0.085), frame_mat)
-	MeshKit.block(holder, Vector3(0.012, 0.007, 0.028), 
-		Vector3(0.0, -0.036, -0.065), frame_mat)
-	MeshKit.block(holder, Vector3(0.01, 0.026, 0.007), 
-		Vector3(0.0, -0.03, -0.088), dark)
-	# флажок предохранителя
-	MeshKit.block(holder, Vector3(0.006, 0.014, 0.008), 
-		Vector3(-0.028, 0.008, -0.115), dark)
-
-	return _place_rifle(root, model, 0.0, 0.64, 0.38, 0.78, 0.32, 
-		RIFLE_VIEW_DROP, Vector3.ZERO, Vector3(0.0, 0.0, 0.06), 0.74)
 
 static func _place_rifle(root: Node3D, model: Node3D, yaw: float, 
 	grip_frac: float, grip_y_frac: float, 

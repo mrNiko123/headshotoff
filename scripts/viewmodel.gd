@@ -1776,10 +1776,10 @@ func kick(strength: = 1.0, from_shot: = false) -> void :
 
 
 
-	if _weapon_id == "deagle" or _weapon_id == "usp":
+	if _weapon_id == "deagle":
 		# у пистолетов свой кик: короткий щелчок запястья вместо
 		# тяжёлого ашпишного подброса, иначе модель летит в камеру
-		var pistol_scale: = 1.0 if _weapon_id == "deagle" else 0.6
+		var pistol_scale: = 1.0
 		_kick_lift = minf(_kick_lift + PISTOL_KICK_LIFT * strength * pistol_scale, 
 			PISTOL_KICK_LIFT_MAX * pistol_scale)
 		_kick_pitch = minf(_kick_pitch + PISTOL_KICK_PITCH * strength * pistol_scale, 

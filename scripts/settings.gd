@@ -79,7 +79,7 @@ const BRIGHTNESS_MAX: = 1.4
 const DEFAULT_OWNED: = [
 	"awp|default", "knife|combat",
 	"ak47|classic", "m4a1|steel",
-	"deagle|chrome", "usp|stock",
+	"deagle|chrome", 
 ]
 
 # Ножи, которые больше не выдаются сразу — их можно достать из кейсов и рынка.
