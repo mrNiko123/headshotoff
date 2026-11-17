@@ -564,15 +564,14 @@ func _glow_material(color: Color, strength: float) -> ShaderMaterial:
 func _refresh_menu_knife() -> void :
 	if _menu_knife_holder == null:
 		return
-	var weapon_key: = "%s|%s|%s" % [Settings.pistol_id, Settings.pistol_skin, 
-		Settings.weapon_skin]
+	var weapon_key: = Settings.weapon_skin
 	if _menu_knife_skin == weapon_key and _menu_knife_holder.get_child_count() > 0:
 		return
 	_menu_knife_skin = weapon_key
 	for child in _menu_knife_holder.get_children():
 		_menu_knife_holder.remove_child(child)
 		child.queue_free()
-	# Герой меню: манекен стоит на лего-карте и ДЕРЖИТ ПИСТОЛЕТ в руке
+	# Герой меню: манекен стоит на лего-карте (без оружия)
 	var mannequin_scene: = preload("res://scenes/mannequin.tscn") as PackedScene
 	if mannequin_scene == null:
 		return
@@ -580,12 +579,6 @@ func _refresh_menu_knife() -> void :
 	_menu_knife_holder.add_child(hero)
 	hero.scale = Vector3.ONE * 0.46
 	hero.position = Vector3(0.0, 0.0, 0.0)
-
-	var gun: Node3D = WeaponBuilder.build(hero, Settings.pistol_id, 
-		Settings.pistol_skin, false)
-	_fit_weapon(gun, 0.5)
-	gun.position = Vector3(0.0, 1.34, 0.4)
-	gun.rotation_degrees = Vector3(-6.0, 96.0, -18.0)
 
 
 
