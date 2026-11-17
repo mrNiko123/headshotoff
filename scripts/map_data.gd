@@ -37,18 +37,28 @@ const MAPS: = [
 	}, 
 ]
 
-const RANKED_MAPS: = [
+# Рейтинг: все тренировочные карты + отдельные арены (без повторов).
+const EXTRA_RANKED_MAPS: = [
 	"res://scenes/arena_crusher.tscn", 
 	"res://scenes/arena_fort.tscn", 
-	"res://scenes/arena_lego.tscn", 
-	"res://scenes/arena_yard.tscn", 
-	"res://scenes/arena_mesa.tscn", 
 ]
 
 
-# Рейтинг: случайная карта из двух своих арен.
+static func ranked_scenes() -> Array[String]:
+	var scenes: Array[String] = []
+	for entry in MAPS:
+		var path: = str(entry["scene"])
+		if not scenes.has(path):
+			scenes.append(path)
+	for path in EXTRA_RANKED_MAPS:
+		if not scenes.has(path):
+			scenes.append(path)
+	return scenes
+
+
 static func random_ranked_scene() -> String:
-	return str(RANKED_MAPS[randi() % RANKED_MAPS.size()])
+	var scenes: = ranked_scenes()
+	return str(scenes[randi() % scenes.size()])
 
 
 static func has_map(id: String) -> bool:
