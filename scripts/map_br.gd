@@ -158,18 +158,22 @@ func _build_terrain() -> void :
 func _house(center: Vector3, width: = 12.0, depth: = 10.0, height: = 6.0, 
 		mat: = _brick) -> void :
 	var t: = 0.5
-	# четыре стены с дверным проёмом на +z стороне
-	_solid(Vector3(width, height, t), center + Vector3(0.0, height * 0.5, 
-		- depth * 0.5), mat)
-	_solid(Vector3(t, height, depth), center + Vector3(- width * 0.5, 
-		height * 0.5, 0.0), mat)
-	_solid(Vector3(t, height, depth), center + Vector3(width * 0.5, 
-		height * 0.5, 0.0), mat)
+	var wall_type: = _harvest_type_for(mat)
+	var wall_hp: = 240.0 if wall_type == "wood" else 360.0
+	# четыре стены с дверным проёмом на +z стороне (добываемые ножом)
+	_harvest_solid(Vector3(width, height, t), center + Vector3(0.0, 
+		height * 0.5, - depth * 0.5), mat, wall_type, wall_hp)
+	_harvest_solid(Vector3(t, height, depth), center + Vector3(- width * 0.5, 
+		height * 0.5, 0.0), mat, wall_type, wall_hp)
+	_harvest_solid(Vector3(t, height, depth), center + Vector3(width * 0.5, 
+		height * 0.5, 0.0), mat, wall_type, wall_hp)
 	# фасад: два сегмента + перемычка над дверью
-	_solid(Vector3(width * 0.38, height, t), 
-		center + Vector3(- width * 0.31, height * 0.5, depth * 0.5), mat)
-	_solid(Vector3(width * 0.38, height, t), 
-		center + Vector3(width * 0.31, height * 0.5, depth * 0.5), mat)
+	_harvest_solid(Vector3(width * 0.38, height, t), 
+		center + Vector3(- width * 0.31, height * 0.5, depth * 0.5), mat, 
+		wall_type, wall_hp)
+	_harvest_solid(Vector3(width * 0.38, height, t), 
+		center + Vector3(width * 0.31, height * 0.5, depth * 0.5), mat, 
+		wall_type, wall_hp)
 	_solid(Vector3(width * 0.24, 1.4, t), 
 		center + Vector3(0.0, height - 0.7, depth * 0.5), mat)
 	# второй этаж-плита и крыша
@@ -182,10 +186,13 @@ func _house(center: Vector3, width: = 12.0, depth: = 10.0, height: = 6.0,
 
 
 func _warehouse(center: Vector3) -> void :
-	# ангар: три стены + плоская крыша на колоннах
-	_solid(Vector3(22.0, 8.0, 0.6), center + Vector3(0.0, 4.0, -9.0), _metal)
-	_solid(Vector3(0.6, 8.0, 18.0), center + Vector3(-11.0, 4.0, 0.0), _metal)
-	_solid(Vector3(0.6, 8.0, 18.0), center + Vector3(11.0, 4.0, 0.0), _metal)
+	# ангар: три стены + плоская крыша на колоннах (стены добываемые)
+	_harvest_solid(Vector3(22.0, 8.0, 0.6), 
+		center + Vector3(0.0, 4.0, -9.0), _metal, "metal", 420.0)
+	_harvest_solid(Vector3(0.6, 8.0, 18.0), 
+		center + Vector3(-11.0, 4.0, 0.0), _metal, "metal", 420.0)
+	_harvest_solid(Vector3(0.6, 8.0, 18.0), 
+		center + Vector3(11.0, 4.0, 0.0), _metal, "metal", 420.0)
 	_solid(Vector3(23.0, 0.6, 19.0), center + Vector3(0.0, 8.3, 0.0), _metal)
 	_solid(Vector3(6.0, 2.4, 6.0), center + Vector3(-6.0, 1.2, 2.0), _metal)
 	_solid(Vector3(6.0, 2.4, 6.0), center + Vector3(6.0, 1.2, -2.0), _metal)
@@ -259,8 +266,16 @@ func _tree(pos: Vector3, scale: = 1.0) -> void :
 		pos + Vector3(0.0, h + 1.0 * scale, 0.0), _leaf)
 
 
+func _harvest_type_for(mat: Material) -> String:
+	if mat == _wood or mat == _trunk:
+		return "wood"
+	if mat == _metal:
+		return "metal"
+	return "stone"
+
+
 func _harvest_solid(size: Vector3, pos: Vector3, mat: Material, 
-		harvest_type: String) -> void :
+		harvest_type: String, hp: = 0.0) -> void :
 	# Добываемый объект: коллизия + собственный меш (трещины/разрушение).
 	var body: = StaticBody3D.new()
 	body.position = pos
@@ -278,6 +293,8 @@ func _harvest_solid(size: Vector3, pos: Vector3, mat: Material,
 	body.add_to_group("harvestable")
 	body.set_meta("harvest_type", harvest_type)
 	body.set_meta("mesh_node", mesh)
+	if hp > 0.0:
+		body.set_meta("harvest_hp", hp)
 
 
 func _car(pos: Vector3, yaw: = 0.0) -> void :

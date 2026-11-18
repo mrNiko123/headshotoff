@@ -40,6 +40,7 @@ var _piece_materials: Array = []
 var _ghost_materials: Array = []
 var _harvest_registry: Dictionary = {}
 var _bot_last_build: Dictionary = {}
+var _bot_last_harvest: Dictionary = {}
 var _ghost_query_shape: BoxShape3D
 
 
@@ -335,12 +336,9 @@ func _spawn_debris(pos: Vector3, color: Color) -> void :
 	var mat: = StandardMaterial3D.new()
 	mat.albedo_color = color
 	particles.material_override = mat
+	particles.finished.connect(particles.queue_free)
 	game.add_child(particles)
 	particles.global_position = pos
-	var timer: = game.get_tree().create_timer(1.1)
-	timer.timeout.connect( func() -> void :
-		if is_instance_valid(particles):
-			particles.queue_free())
 
 
 # ---------- редактор проёма ----------
@@ -437,9 +435,10 @@ func _register_harvestable(body: Node) -> Dictionary:
 	marker.material_override = marker_mat
 	marker.position = weak_pos - body.global_position
 	body.add_child(marker)
+	var max_hp: = float(body.get_meta("harvest_hp", 120.0))
 	var info: = {
-		"hp": 120.0, 
-		"max_hp": 120.0, 
+		"hp": max_hp, 
+		"max_hp": max_hp, 
 		"weak_pos": weak_pos, 
 	}
 	_harvest_registry[body] = info
@@ -463,6 +462,29 @@ func _destroy_harvestable(body: Node) -> void :
 
 # ---------- боты ----------
 
+func _bot_try_harvest(bot: Node3D, wood: int) -> void :
+	# Имитация добычи: у бота кончились материалы, рядом есть дерево/камень/машина.
+	var now: = Time.get_ticks_msec() / 1000.0
+	var last: = float(_bot_last_harvest.get(bot, - 999.0))
+	if now - last < 5.0:
+		return
+	var tree: SceneTree = bot.get_tree()
+	if tree == null:
+		return
+	for node in tree.get_nodes_in_group("harvestable"):
+		var body: Node3D = node as Node3D
+		if body == null or not is_instance_valid(body):
+			continue
+		var dist: float = body.global_position.distance_to(bot.global_position)
+		if dist > 12.0:
+			continue
+		var amount: = randi_range(int(settings.harvest_min), 
+			int(settings.harvest_max))
+		bot.set_meta("br_mats", mini(int(settings.material_cap), wood + amount))
+		_bot_last_harvest[bot] = now
+		return
+
+
 func bot_react(bot: Node3D, enemy: Node3D) -> void :
 	# Стена между ботом и врагом под огнём (если есть материалы).
 	if not is_instance_valid(bot) or not is_instance_valid(enemy):
@@ -478,6 +500,8 @@ func bot_react(bot: Node3D, enemy: Node3D) -> void :
 	var wood: = int(bot_mats)
 	var cost: = int(settings.piece_cost)
 	if wood < cost:
+		# низкий приоритет: рядом есть добываемый объект — «добывает» материалы
+		_bot_try_harvest(bot, wood)
 		return
 	var direction: = enemy.global_position - bot.global_position
 	if absf(direction.y) > 3.0 and direction.y > 0.0:
@@ -515,3 +539,12 @@ func clear_all() -> void :
 		for child in pieces_root.get_children():
 			child.queue_free()
 	piece_count = 0
+	_harvest_registry.clear()
+	_bot_last_build.clear()
+	_bot_last_harvest.clear()
+
+
+func _exit_tree() -> void :
+	_harvest_registry.clear()
+	_bot_last_build.clear()
+	_bot_last_harvest.clear()

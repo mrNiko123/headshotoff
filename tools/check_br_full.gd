@@ -65,6 +65,10 @@ func _test_build_mode() -> void :
 		print("PASS_PIECES=", bm.piece_count >= 1)
 		print("PASS_WOOD_SPENT=", int(bm.mats["wood"]) == 90)
 		var piece: Node = bm.pieces_root.get_child(0)
+		var hp_before: = float(piece.get_meta("piece_hp"))
+		br._on_player_melee({"collider": piece})
+		print("PASS_KNIFE_PIECE=", absf(
+			float(piece.get_meta("piece_hp")) - (hp_before - 40.0)) < 0.01)
 		bm.damage_piece(piece, 100.0)
 		print("PASS_DAMAGE=", absf(float(piece.get_meta("piece_hp"))) < 50.5)
 		bm.damage_piece(piece, 60.0)
@@ -82,6 +86,21 @@ func _test_build_mode() -> void :
 				+ Vector3(0.0, 1.0, 0.0)}
 		bm.knife_hit(hit)
 		print("PASS_HARVEST_MATS=", int(bm.mats[mat_key]) > before)
+	var wall_nodes: = 0
+	for node in harvest_nodes:
+		if float(node.get_meta("harvest_hp", 0.0)) > 0.0:
+			wall_nodes += 1
+	print("PASS_WALL_HARVESTABLE=", wall_nodes >= 8)
+	if bm != null and harvest_nodes.size() > 0:
+		var bot_test: Node3D = Node3D.new()
+		br.add_child(bot_test)
+		bot_test.global_position = (harvest_nodes[0] as Node3D).global_position \
+			+ Vector3(0.0, 0.0, 4.0)
+		bot_test.set_meta("br_mats", 0)
+		bm._bot_try_harvest(bot_test, 0)
+		var gained: = int(bot_test.get_meta("br_mats", 0))
+		print("PASS_BOT_HARVEST=", gained >= 10 and gained <= 20)
+		bot_test.queue_free()
 	var mats_pickups: = 0
 	var pickups: = 0
 	for child in br.get_children():

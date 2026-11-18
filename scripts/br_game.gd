@@ -354,7 +354,7 @@ func _setup_zone() -> void :
 	_zone_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_zone_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_zone_material.albedo_color = Color(0.6, 0.32, 1.0, 0.14)
-	_zone_material.no_fog = true
+	_zone_material.disable_fog = true
 	_zone_wall.material_override = _zone_material
 	_zone_wall.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_zone_wall.position = Vector3(_zone_center.x, ZONE_HEIGHT * 0.5 - 4.0, 
@@ -784,6 +784,12 @@ func _on_player_melee(hit: Dictionary) -> void :
 	if phase != Phase.LIVE:
 		return
 	var collider_melee: Object = hit.get("collider")
+	if _build_enabled and build_manager != null and collider_melee is Node \
+			and (collider_melee as Node).is_in_group("build_piece"):
+		build_manager.damage_piece(collider_melee as Node, 40.0)
+		hud.kick_crosshair(1.4)
+		Sfx.play_hit()
+		return
 	if _build_enabled and build_manager != null and collider_melee is Node \
 			and (collider_melee as Node).is_in_group("harvestable"):
 		build_manager.knife_hit(hit)
