@@ -16,6 +16,7 @@ var bot_start: = Vector3(0.0, 0.05, -40.0)
 var bot_hold_points: Array[Vector3] = []
 var bot_hunt_points: Array[Vector3] = []
 var bot_nav_points: Array[Vector3] = []
+var loot_points: Array[Vector3] = []
 
 var _grass: StandardMaterial3D
 var _road: StandardMaterial3D
@@ -251,10 +252,61 @@ func _build_pois() -> void :
 
 func _tree(pos: Vector3, scale: = 1.0) -> void :
 	var h: = 4.5 * scale
-	_solid(Vector3(0.8 * scale, h, 0.8 * scale), 
-		pos + Vector3(0.0, h * 0.5, 0.0), _trunk)
+	# ствол — добываемый (дерево), листва — обычный декор с коллизией
+	_harvest_solid(Vector3(0.8 * scale, h, 0.8 * scale), 
+		pos + Vector3(0.0, h * 0.5, 0.0), _trunk, "wood")
 	_solid(Vector3(3.6 * scale, 2.4 * scale, 3.6 * scale), 
 		pos + Vector3(0.0, h + 1.0 * scale, 0.0), _leaf)
+
+
+func _harvest_solid(size: Vector3, pos: Vector3, mat: Material, 
+		harvest_type: String) -> void :
+	# Добываемый объект: коллизия + собственный меш (трещины/разрушение).
+	var body: = StaticBody3D.new()
+	body.position = pos
+	add_child(body)
+	var shape: = BoxShape3D.new()
+	shape.size = size
+	var col: = CollisionShape3D.new()
+	col.shape = shape
+	body.add_child(col)
+	var mesh: = MeshInstance3D.new()
+	mesh.mesh = MeshKit.box_mesh(size)
+	mesh.material_override = mat
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	body.add_child(mesh)
+	body.add_to_group("harvestable")
+	body.set_meta("harvest_type", harvest_type)
+	body.set_meta("mesh_node", mesh)
+
+
+func _car(pos: Vector3, yaw: = 0.0) -> void :
+	# машина-укрытие: добываемый металл
+	var body: = StaticBody3D.new()
+	body.position = pos
+	body.rotation_degrees = Vector3(0.0, yaw, 0.0)
+	add_child(body)
+	var shape: = BoxShape3D.new()
+	shape.size = Vector3(2.2, 1.5, 4.8)
+	var col: = CollisionShape3D.new()
+	col.shape = shape
+	col.position = Vector3(0.0, 0.75, 0.0)
+	body.add_child(col)
+	var mesh: = MeshInstance3D.new()
+	mesh.mesh = MeshKit.box_mesh(Vector3(2.2, 1.5, 4.8))
+	mesh.material_override = _metal
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mesh.position = Vector3(0.0, 0.75, 0.0)
+	body.add_child(mesh)
+	var cabin: = MeshInstance3D.new()
+	cabin.mesh = MeshKit.box_mesh(Vector3(2.0, 1.1, 2.4))
+	cabin.material_override = _metal
+	cabin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	cabin.position = Vector3(0.0, 2.0, -0.2)
+	body.add_child(cabin)
+	body.add_to_group("harvestable")
+	body.set_meta("harvest_type", "metal")
+	body.set_meta("mesh_node", mesh)
 
 
 func _build_nature() -> void :
@@ -289,7 +341,17 @@ func _build_nature() -> void :
 	]
 	for r in rocks:
 		var spec: Array = r
-		_solid(spec[1], spec[0] + Vector3(0.0, spec[1].y * 0.5, 0.0), _rock)
+		_harvest_solid(spec[1], 
+			spec[0] + Vector3(0.0, spec[1].y * 0.5, 0.0), _rock, "stone")
+	# машины вдоль дорог
+	for car_spec in [
+		[Vector3(9.0, 0.0, 60.0), 90.0], [Vector3(-9.0, 0.0, -80.0), 90.0], 
+		[Vector3(60.0, 0.0, -9.0), 0.0], [Vector3(-80.0, 0.0, 9.0), 0.0], 
+		[Vector3(9.0, 0.0, 130.0), 90.0], [Vector3(-9.0, 0.0, -130.0), 90.0], 
+		[Vector3(130.0, 0.0, 9.0), 0.0], [Vector3(-130.0, 0.0, -9.0), 0.0], 
+	]:
+		var cspec: Array = car_spec
+		_car(cspec[0], float(cspec[1]))
 
 
 func _build_environment_walls() -> void :
@@ -359,3 +421,53 @@ func _build_spawn_points() -> void :
 		Vector3(90.0, 9.5, 105.0), Vector3(-105.0, 7.5, 100.0), 
 	]
 	bot_hunt_points = bot_hold_points.duplicate()
+
+	# точки для лута: POI + сетка + крыши
+	loot_points = []
+	for p in bot_hold_points:
+		loot_points.append(Vector3(p.x, p.y + 0.5, p.z))
+	for p in bot_nav_points:
+		loot_points.append(Vector3(p.x + randf_range(-8.0, 8.0), 0.5, 
+			p.z + randf_range(-8.0, 8.0)))
+	loot_points.append(Vector3(-26.0, 8.2, 22.0))
+	loot_points.append(Vector3(24.0, 9.2, -22.0))
+	loot_points.append(Vector3(0.0, 9.0, 40.0))
+	loot_points.append(Vector3(90.0, 12.2, 90.0))
+
+
+func add_extra_cover() -> void :
+	# Больше укрытий для режима БЕЗ строительства:
+	# ящики, бетонные стены, камни.
+	var crates: = [
+		Vector3(-12.0, 0.0, 12.0), Vector3(12.0, 0.0, -12.0), 
+		Vector3(-20.0, 0.0, 5.0), Vector3(20.0, 0.0, -5.0), 
+		Vector3(8.0, 0.0, 30.0), Vector3(-8.0, 0.0, -30.0), 
+		Vector3(30.0, 0.0, 8.0), Vector3(-30.0, 0.0, -8.0), 
+		Vector3(-15.0, 0.0, 45.0), Vector3(15.0, 0.0, -45.0), 
+		Vector3(45.0, 0.0, -15.0), Vector3(-45.0, 0.0, 15.0), 
+		Vector3(-8.0, 0.0, 95.0), Vector3(8.0, 0.0, -95.0), 
+	]
+	for i in crates.size():
+		var size: = 1.8 if i % 2 == 0 else 1.4
+		_solid(Vector3(size, size, size), crates[i] + Vector3(0.0, 
+			size * 0.5, 0.0), _wood)
+	var walls: = [
+		[Vector3(25.0, 0.0, 12.0), 90.0], [Vector3(-25.0, 0.0, -12.0), 90.0], 
+		[Vector3(12.0, 0.0, -25.0), 0.0], [Vector3(-12.0, 0.0, 25.0), 0.0], 
+		[Vector3(60.0, 0.0, 30.0), 0.0], [Vector3(-60.0, 0.0, -30.0), 0.0], 
+	]
+	for w in walls:
+		var wspec: Array = w
+		var yaw: float = wspec[1]
+		var wsize: = Vector3(6.0, 2.6, 0.6) if yaw == 0.0 \
+			else Vector3(0.6, 2.6, 6.0)
+		_solid(wsize, wspec[0] + Vector3(0.0, 1.3, 0.0), _brick)
+	var rocks: = [
+		Vector3(35.0, 0.0, 35.0), Vector3(-35.0, 0.0, -35.0), 
+		Vector3(-35.0, 0.0, 35.0), Vector3(35.0, 0.0, -35.0), 
+		Vector3(80.0, 0.0, -20.0), Vector3(-80.0, 0.0, 20.0), 
+		Vector3(-20.0, 0.0, -80.0), Vector3(20.0, 0.0, 80.0), 
+	]
+	for r in rocks:
+		_harvest_solid(Vector3(3.4, 2.6, 3.0), r + Vector3(0.0, 1.3, 0.0), 
+			_rock, "stone")

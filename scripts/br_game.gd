@@ -12,8 +12,11 @@ const WorldTintShader = preload("res://shaders/world_tint.gdshader")
 const RagdollScript = preload("res://scripts/ragdoll.gd")
 const WeaponData = preload("res://scripts/weapon_data.gd")
 const MeshKit = preload("res://scripts/mesh_kit.gd")
+const BuildManagerScript = preload("res://br/building/build_manager.gd")
+const BRBuildHudScript = preload("res://br/building/br_build_hud.gd")
+const LootPickupScript = preload("res://br/building/loot_pickup.gd")
 
-enum Phase{INTRO, LIVE, PAUSED, ENDED}
+enum Phase{INTRO, BUS, GLIDE, LIVE, PAUSED, ENDED}
 
 const FIGHTER_COUNT: = 20
 const SAFEGUARD_TIME: = 600.0
@@ -42,14 +45,13 @@ const ZONE_PHASES: = [
 	[15.0, 15.0, 8.0, 10.0], 
 ]
 
-# строительство
-const BUILD_CELL: = 3.2
-const BUILD_COOLDOWN: = 0.24
-const BUILD_MAX_PIECES: = 200
-const WALL_SIZE: = Vector3(BUILD_CELL, BUILD_CELL, 0.3)
-const FLOOR_SIZE: = Vector3(BUILD_CELL, 0.3, BUILD_CELL)
-const RAMP_SIZE: = Vector3(BUILD_CELL, 0.3, 4.52)
-const RAMP_ANGLE: = 26.6
+# строительство (система res://br/building/, только подрежим "со строительством")
+const MAT_KEYS: = ["wood", "stone", "metal"]
+const LOOT_COUNT: = 70
+# автобус
+const BUS_HEIGHT: = 105.0
+const BUS_SPEED: = 22.0
+const GLIDE_FALL_MAX: = - 11.0
 
 const ACCENT: = Color(1.0, 0.55, 0.16, 1.0)
 const ACCENT_BRIGHT: = Color(1.0, 0.8, 0.4, 1.0)
@@ -118,18 +120,16 @@ var _zone_material: StandardMaterial3D
 var _zone_points_clock: = 0.0
 var _zone_warned: = false
 
-# строительство — состояние
+# строительство — система (подрежим "со строительством")
 var _build_enabled: = false
-var _pieces_root: Node3D
-var _piece_count: = 0
-var _build_cooldown: = 0.0
-var _ghost: MeshInstance3D
-var _ghost_material: StandardMaterial3D
-var _ghost_bad_material: StandardMaterial3D
-var _piece_material: StandardMaterial3D
-var _build_hinted: = false
-var _ghost_blocked: = false
-var _ghost_query_shape: BoxShape3D
+var build_manager: Node
+var _build_hud: CanvasLayer
+
+# автобус и лут
+var _bus: Node3D
+var _bus_from: = Vector3.ZERO
+var _bus_to: = Vector3.ZERO
+var _bus_progress: = 0.0
 
 @onready var player = $Player
 @onready var hud = $HUD
@@ -142,7 +142,7 @@ func _ready() -> void :
 	randomize()
 	_player_name = _resolve_player_name()
 	_player_weapon = _resolve_player_weapon()
-	_build_enabled = Settings.br_build
+	_build_enabled = _resolve_build_enabled()
 	map = arena.get_node_or_null("Map") as Node3D
 	world_environment = arena.get_node_or_null("WorldEnvironment") as WorldEnvironment
 	_sun = arena.get_node_or_null("Sun") as DirectionalLight3D
@@ -155,7 +155,8 @@ func _ready() -> void :
 	_spawn_bots()
 	_refresh_bot_targets()
 	_setup_zone()
-	_setup_build()
+	_setup_build_system()
+	_spawn_loot()
 	_apply_environment()
 	_apply_quality_lighting()
 
@@ -192,6 +193,16 @@ func _resolve_player_weapon() -> String:
 	if not WeaponData.WEAPONS.has(id) or WeaponData.is_melee(id):
 		return "ak47"
 	return id
+
+
+func _resolve_build_enabled() -> bool:
+	# выбор подрежима хранится в res://br/data/br_settings.tres
+	var settings_resource: Resource = load("res://br/data/br_settings.tres")
+	if settings_resource != null:
+		var value: Variant = settings_resource.get("building_enabled")
+		if value != null:
+			return bool(value)
+	return bool(Settings.br_build)
 
 
 func _setup_world_view() -> void :
@@ -348,6 +359,7 @@ func _setup_zone() -> void :
 	_zone_wall.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_zone_wall.position = Vector3(_zone_center.x, ZONE_HEIGHT * 0.5 - 4.0, 
 		_zone_center.z)
+	_zone_wall.visible = false
 	add_child(_zone_wall)
 	_update_zone_wall()
 
@@ -483,143 +495,204 @@ func _zone_status_text() -> String:
 	return "ФИНАЛЬНАЯ ЗОНА"
 
 
-# ---------- строительство ----------
+# ---------- строительство (build_manager) ----------
 
-func _setup_build() -> void :
-	_pieces_root = Node3D.new()
-	_pieces_root.name = "BuildPieces"
-	add_child(_pieces_root)
-	_piece_material = MeshKit.material(Color(0.76, 0.6, 0.38, 1.0), 0.85, 0.0)
-	_ghost_material = StandardMaterial3D.new()
-	_ghost_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_ghost_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_ghost_material.albedo_color = Color(0.35, 0.85, 1.0, 0.35)
-	_ghost_bad_material = StandardMaterial3D.new()
-	_ghost_bad_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_ghost_bad_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_ghost_bad_material.albedo_color = Color(1.0, 0.3, 0.25, 0.3)
-	_ghost = MeshInstance3D.new()
-	_ghost.mesh = MeshKit.box_mesh(WALL_SIZE)
-	_ghost.material_override = _ghost_material
-	_ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_ghost.visible = false
-	add_child(_ghost)
-	_ghost_query_shape = BoxShape3D.new()
-	_ghost_query_shape.size = WALL_SIZE
-
-
-func _build_hint_text() -> String:
-	return "Q — СТЕНА   ·   E — РАМПА   ·   C — ПОЛ"
+func _setup_build_system() -> void :
+	if _build_enabled:
+		build_manager = BuildManagerScript.new()
+		build_manager.name = "BuildManager"
+		add_child(build_manager)
+		build_manager.setup(self, player)
+		_build_hud = BRBuildHudScript.new()
+		_build_hud.name = "BRBuildHud"
+		add_child(_build_hud)
+		build_manager.mats_changed.connect(_build_hud.update_mats)
+		build_manager.mode_changed.connect(_build_hud.update_mode)
+		_build_hud.update_mats(0, 0, 0, 0)
+	elif map != null and map.has_method("add_extra_cover"):
+		# подрежим БЕЗ строительства: больше укрытий, ничего от стройки
+		map.add_extra_cover()
 
 
 func _tick_build(delta: float) -> void :
-	_build_cooldown = maxf(0.0, _build_cooldown - delta)
-	var show_ghost: bool = _build_enabled and phase == Phase.LIVE \
-		and player.is_alive()
-	_ghost.visible = show_ghost
-	if not show_ghost:
+	if not _build_enabled or build_manager == null:
 		return
-	_ghost.transform = _ghost_transform()
-	# проверка занятости клетки
-	_ghost.material_override = _ghost_material
-	_ghost_blocked = false
-	var params: = PhysicsShapeQueryParameters3D.new()
-	params.shape = _ghost_query_shape
-	params.transform = _ghost_transform()
-	params.collision_mask = 1
-	params.exclude = [player.get_rid()]
-	var hit: = get_world_3d().direct_space_state.intersect_shape(params, 1)
-	if not hit.is_empty():
-		_ghost_blocked = true
-		_ghost.material_override = _ghost_bad_material
-
-
-func _ghost_transform() -> Transform3D:
-	var camera: Camera3D = player.camera
-	var origin: = camera.global_position
-	var forward: = - camera.global_basis.z
-	forward.y = 0.0
-	forward = forward.normalized()
-	if forward.length_squared() < 0.01:
-		forward = Vector3.FORWARD
-	var target: = origin + forward * (BUILD_CELL * 1.4)
-	var yaw: = roundf(rad_to_deg(atan2(forward.x, forward.z)) / 90.0) * 90.0
-	var kind: = _build_kind()
-	var pos: = Vector3(_snap(target.x), target.y, _snap(target.z))
-	pos.y = _ground_y(pos) + 0.06
-	if kind == "floor":
-		return Transform3D(Basis.IDENTITY, pos + Vector3(0.0, 0.1, 0.0))
-	if kind == "ramp":
-		var basis: = Basis.from_euler(Vector3(
-			-deg_to_rad(RAMP_ANGLE), deg_to_rad(yaw), 0.0))
-		return Transform3D(basis, pos + Vector3(0.0, BUILD_CELL * 0.5, 0.0))
-	var basis_wall: = Basis.from_euler(Vector3(0.0, deg_to_rad(yaw), 0.0))
-	return Transform3D(basis_wall, pos + Vector3(0.0, BUILD_CELL * 0.5, 0.0))
-
-
-func _build_kind() -> String:
-	if Input.is_physical_key_pressed(KEY_Q):
-		return "wall"
-	if Input.is_physical_key_pressed(KEY_E):
-		return "ramp"
-	return "floor"
-
-
-func _snap(value: float) -> float:
-	return roundf(value / BUILD_CELL) * BUILD_CELL
-
-
-func _ground_y(pos: Vector3) -> float:
-	var space: = get_world_3d().direct_space_state
-	var from: = pos + Vector3(0.0, 12.0, 0.0)
-	var query: = PhysicsRayQueryParameters3D.create(from, 
-		pos + Vector3(0.0, -4.0, 0.0))
-	query.collision_mask = 1
-	var hit: = space.intersect_ray(query)
-	if hit.is_empty():
-		return 0.0
-	return float(hit["position"].y)
-
-
-func _try_place_piece() -> void :
-	if not _build_enabled or phase != Phase.LIVE or not player.is_alive():
+	if phase != Phase.LIVE or not player.is_alive():
+		build_manager.ghost.visible = false
 		return
-	if _build_cooldown > 0.0 or _piece_count >= BUILD_MAX_PIECES:
-		return
-	if _ghost_blocked:
-		return
-	_build_cooldown = BUILD_COOLDOWN
-	var kind: = _build_kind()
-	var transform: = _ghost_transform()
-	var body: = StaticBody3D.new()
-	body.transform = transform
-	var size: = WALL_SIZE
-	if kind == "floor":
-		size = FLOOR_SIZE
-	elif kind == "ramp":
-		size = RAMP_SIZE
-	var shape: = BoxShape3D.new()
-	shape.size = size
-	var col: = CollisionShape3D.new()
-	col.shape = shape
-	body.add_child(col)
-	var mesh: = MeshInstance3D.new()
-	mesh.mesh = MeshKit.box_mesh(size)
-	mesh.material_override = _piece_material
-	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mesh.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
-	body.add_child(mesh)
-	_pieces_root.add_child(body)
-	_piece_count += 1
-	Sfx.play_click()
+	build_manager.update_ghost()
+	if player.has_meta("br_build") \
+			and Input.is_action_just_pressed("shoot"):
+		build_manager.try_place()
 
 
-func _clear_build_pieces() -> void :
-	if _pieces_root == null:
+# ---------- автобус ----------
+
+func _setup_bus() -> void :
+	var angle: = randf() * TAU
+	var direction: = Vector3(cos(angle), 0.0, sin(angle))
+	_bus_from = - direction * 300.0 + Vector3(0.0, BUS_HEIGHT, 0.0)
+	_bus_to = direction * 300.0 + Vector3(0.0, BUS_HEIGHT, 0.0)
+	_bus_progress = 0.0
+	_bus = Node3D.new()
+	_bus.name = "BattleBus"
+	_bus.position = _bus_from
+	var body: = MeshInstance3D.new()
+	body.mesh = MeshKit.box_mesh(Vector3(2.6, 2.5, 10.0))
+	body.material_override = MeshKit.material(Color(0.95, 0.55, 0.1, 1.0), 
+		0.6, 0.1)
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	body.position = Vector3(0.0, 1.25, 0.0)
+	_bus.add_child(body)
+	var cabin: = MeshInstance3D.new()
+	cabin.mesh = MeshKit.box_mesh(Vector3(2.4, 0.8, 2.0))
+	cabin.material_override = MeshKit.material(Color(0.15, 0.2, 0.25, 1.0), 
+		0.3, 0.2)
+	cabin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	cabin.position = Vector3(0.0, 2.9, 3.6)
+	_bus.add_child(cabin)
+	for side in [- 1.0, 1.0]:
+		var window: = MeshInstance3D.new()
+		window.mesh = MeshKit.box_mesh(Vector3(0.1, 0.9, 7.0))
+		window.material_override = MeshKit.material(
+			Color(0.4, 0.7, 0.9, 1.0), 0.2, 0.4)
+		window.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		window.position = Vector3(side * 1.32, 1.7, 0.0)
+		_bus.add_child(window)
+	add_child(_bus)
+	var yaw: = atan2( - direction.x, - direction.z)
+	_bus.rotation.y = yaw
+	player.global_position = _bus_from + Vector3(0.0, 11.0, 0.0)
+	player.rotation.y = yaw
+	player.set("_pitch", - 0.62)
+	player.head.rotation.x = - 0.62
+	player.active = false
+
+
+func _tick_bus(delta: float) -> void :
+	_bus_progress += delta * BUS_SPEED / 600.0
+	if _bus_progress >= 1.0:
+		_eject_from_bus()
 		return
-	for child in _pieces_root.get_children():
-		child.queue_free()
-	_piece_count = 0
+	var pos: = _bus_from.lerp(_bus_to, _bus_progress)
+	_bus.position = pos
+	player.global_position = pos + Vector3(0.0, 11.0, 0.0)
+
+
+func _eject_from_bus() -> void :
+	if phase != Phase.BUS:
+		return
+	phase = Phase.GLIDE
+	var pos: = _bus_from.lerp(_bus_to, minf(_bus_progress, 1.0))
+	player.global_position = pos + Vector3(0.0, 11.0, 0.0)
+	player.rotation.y = _bus.rotation.y
+	player.active = true
+	player.velocity = Vector3( - _bus_from.direction_to(_bus_to).x * 8.0, 
+		- 2.0, - _bus_from.direction_to(_bus_to).z * 8.0)
+	if _bus != null and is_instance_valid(_bus):
+		var bus_node: = _bus
+		var timer: = get_tree().create_timer(6.0)
+		timer.timeout.connect( func() -> void :
+			if is_instance_valid(bus_node):
+				bus_node.queue_free())
+		_bus = null
+	dm_hud.announce("ГЛАЙДЕР · ИЩИ МЕСТО ПОСАДКИ", CYAN)
+
+
+func _tick_glide(delta: float) -> void :
+	# планер: падение замедлено до посадки
+	if not player.is_on_floor():
+		if player.velocity.y < GLIDE_FALL_MAX:
+			player.velocity.y = GLIDE_FALL_MAX
+		return
+	_start_live()
+
+
+func _start_live() -> void :
+	phase = Phase.LIVE
+	player.active = true
+	if _zone_wall != null:
+		_zone_wall.visible = true
+	for bot in _bot_nodes:
+		if is_instance_valid(bot):
+			bot.active = true
+	_start_player_guard()
+	_refresh_bot_targets()
+	_push_zone_points()
+	if _build_enabled:
+		dm_hud.popup("Q СТЕНА · Z ПОЛ · X ЛЕСТНИЦА · C КРЫША", CYAN)
+	else:
+		dm_hud.popup("ЛУТАЙ ОРУЖИЕ И ДЕРЖИСЬ В ЗОНЕ", CYAN)
+
+
+# ---------- лут ----------
+
+func _spawn_loot() -> void :
+	if map == null:
+		return
+	var raw: Variant = map.get("loot_points")
+	if not (raw is Array):
+		return
+	var points: Array = (raw as Array).duplicate()
+	points.shuffle()
+	var count: = mini(points.size(), LOOT_COUNT)
+	for i in count:
+		if not (points[i] is Vector3):
+			continue
+		var point: Vector3 = points[i]
+		var kind: = _roll_loot_kind()
+		var payload = null
+		if kind == "weapon":
+			payload = BOT_WEAPONS[randi() % BOT_WEAPONS.size()]
+		elif kind == "mats":
+			payload = MAT_KEYS[randi() % MAT_KEYS.size()]
+		var pickup := LootPickupScript.new()
+		pickup.setup(kind, payload, point)
+		pickup.target = player
+		pickup.collected.connect(_on_loot_collected)
+		add_child(pickup)
+
+
+func _roll_loot_kind() -> String:
+	var roll: = randf()
+	if _build_enabled:
+		# 25% аптечка / 30% патроны / 15% оружие / 30% материалы
+		if roll < 0.25:
+			return "health"
+		if roll < 0.55:
+			return "ammo"
+		if roll < 0.7:
+			return "weapon"
+		return "mats"
+	# без строительства материалы не выпадают
+	if roll < 0.35:
+		return "health"
+	if roll < 0.7:
+		return "ammo"
+	return "weapon"
+
+
+func _on_loot_collected(kind: String, payload) -> void :
+	if phase != Phase.LIVE or not player.is_alive():
+		return
+	if kind == "health":
+		player.reset_health()
+		dm_hud.popup("АПТЕЧКА · ПОЛНОЕ ЛЕЧЕНИЕ", GREEN)
+	elif kind == "ammo":
+		var state: Dictionary = player.get_ammo_state()
+		var magazine: = int(state.get("magazine", 0))
+		if magazine > 0:
+			var current: = int(player.get("_primary_ammo"))
+			player.set("_primary_ammo", clampi(current + magazine * 2, 0, 
+				magazine * 4))
+			dm_hud.popup("+2 МАГАЗИНА", Color(1.0, 0.8, 0.25, 1.0))
+	elif kind == "weapon":
+		var weapon_id: = str(payload)
+		player.set_duel_weapon(weapon_id, _first_skin(weapon_id))
+		dm_hud.popup("ОРУЖИЕ · %s" % weapon_id.to_upper(), CYAN)
+	elif kind == "mats" and _build_enabled and build_manager != null:
+		build_manager.add_mats(str(payload), randi_range(30, 50))
+		dm_hud.popup("МАТЕРИАЛЫ +30-50", Color(0.76, 0.6, 0.38, 1.0))
 
 
 # ---------- подключение ----------
@@ -668,6 +741,15 @@ func _on_player_shot(hit: Dictionary) -> void :
 	if phase != Phase.LIVE:
 		return
 	_match_stats["shots"] = int(_match_stats.get("shots", 0)) + 1
+	var collider_shot: Object = hit.get("collider")
+	if _build_enabled and build_manager != null and collider_shot is Node \
+			and (collider_shot as Node).is_in_group("build_piece"):
+		var weapon_info: = WeaponData.get_weapon(
+			str(hit.get("weapon", _player_weapon)))
+		build_manager.damage_piece(collider_shot as Node, 
+			float(weapon_info.get("damage_body", 36.0)))
+		hud.kick_crosshair(1.2)
+		return
 	var zone: = str(hit.get("zone", "body"))
 	var headshot: = bool(hit.get("headshot", false))
 	if not bool(hit.get("mannequin", false)):
@@ -700,6 +782,12 @@ func _on_player_shot(hit: Dictionary) -> void :
 func _on_player_melee(hit: Dictionary) -> void :
 	_end_player_guard()
 	if phase != Phase.LIVE:
+		return
+	var collider_melee: Object = hit.get("collider")
+	if _build_enabled and build_manager != null and collider_melee is Node \
+			and (collider_melee as Node).is_in_group("harvestable"):
+		build_manager.knife_hit(hit)
+		hud.kick_crosshair(1.4)
 		return
 	if not bool(hit.get("mannequin", false)):
 		hud.kick_crosshair(1.4)
@@ -904,6 +992,12 @@ func _register_hit(victim: Node, attacker: Node, amount: float, zone: String,
 	if not attacker_stats.is_empty():
 		attacker_stats["damage"] = float(attacker_stats.get("damage", 0.0)) + amount
 		_stats[attacker_id] = attacker_stats
+	# боты BR: стена между собой и врагом / лестница
+	if _build_enabled and build_manager != null \
+			and victim_id.begins_with("bot_") and is_instance_valid(victim) \
+			and is_instance_valid(attacker) and victim is Node3D \
+			and attacker is Node3D:
+		build_manager.bot_react(victim as Node3D, attacker as Node3D)
 
 
 func _handle_death(victim: Node) -> void :
@@ -1000,6 +1094,15 @@ func _begin_intro() -> void :
 	for bot in _bot_nodes:
 		if is_instance_valid(bot):
 			bot.active = false
+	var mode_text: = "СО СТРОИТЕЛЬСТВОМ" if _build_enabled \
+		else "БЕЗ СТРОИТЕЛЬСТВА"
+	dm_hud.configure_intro(
+		"ЛЮБИТЕЛЬСКИЙ РЕЖИМ  ·  РЕЙТИНГ НЕ ВЛИЯЕТ", 
+		"БАТЛ РОЯЛЬ", 
+		"КВАРТАЛ «СЕРЫЙ»  ·  %d БОЙЦОВ  ·  %s" % [FIGHTER_COUNT, mode_text], 
+		"ПРЫГАЙ С АВТОБУСА  ·  ЛУТАЙ ОРУЖИЕ  ·  ДЕРЖИСЬ ВНУТРИ ЗОНЫ", 
+		"ПРОБЕЛ — ПРЫЖОК С АВТОБУСА. ПОБЕДА — ПОСЛЕДНИЙ ВЫЖИВШИЙ "
+			+ "ИЗ %d БОЙЦОВ." % FIGHTER_COUNT)
 	dm_hud.show_intro()
 	await _wait(0.55)
 	for step in ["3", "2", "1"]:
@@ -1012,7 +1115,7 @@ func _begin_intro() -> void :
 	if not is_inside_tree() or phase != Phase.INTRO:
 		_intro_running = false
 		return
-	dm_hud.set_intro_countdown("БОЙ")
+	dm_hud.set_intro_countdown("ВЗЛЁТ")
 	Sfx.play_start()
 	await _wait(0.4)
 	if not is_inside_tree() or phase != Phase.INTRO:
@@ -1022,17 +1125,11 @@ func _begin_intro() -> void :
 	if not is_inside_tree() or phase != Phase.INTRO:
 		_intro_running = false
 		return
-	player.active = true
-	for bot in _bot_nodes:
-		if is_instance_valid(bot):
-			bot.active = true
-	phase = Phase.LIVE
+	# автобус: игрок на крыше, ПРОБЕЛ — прыжок
+	_setup_bus()
+	phase = Phase.BUS
 	_intro_running = false
-	_start_player_guard()
-	_refresh_bot_targets()
-	_push_zone_points()
-	if _build_enabled:
-		dm_hud.popup(_build_hint_text(), CYAN)
+	dm_hud.popup("ПРОБЕЛ — ПРЫЖОК С АВТОБУСА", CYAN)
 
 
 func _process(delta: float) -> void :
@@ -1049,6 +1146,10 @@ func _process(delta: float) -> void :
 			_player_place = _alive_count() if player.is_alive() \
 				else _alive_count() + 1
 			_finish_match()
+	elif phase == Phase.BUS and _bus != null:
+		_tick_bus(delta)
+	elif phase == Phase.GLIDE:
+		_tick_glide(delta)
 	_leaderboard_clock -= delta
 	if _leaderboard_clock <= 0.0:
 		_leaderboard_clock = 0.16
@@ -1090,6 +1191,7 @@ func _finish_match() -> void :
 	phase = Phase.ENDED
 	Engine.time_scale = 1.0
 	_end_player_guard()
+	player.remove_meta("br_build")
 	player.active = false
 	for bot in _bot_nodes:
 		if is_instance_valid(bot):
@@ -1101,6 +1203,8 @@ func _finish_match() -> void :
 	dm_hud.hide_guard()
 	dm_hud.hide_killed_by()
 	dm_hud.hide_scoreboard()
+	if build_manager != null and build_manager.ghost != null:
+		build_manager.ghost.visible = false
 	var rows: = _sorted_rows()
 	var own: = _player_row(rows)
 	dm_hud.set_leaderboard(rows)
@@ -1164,6 +1268,10 @@ func _apply_environment() -> void :
 		return
 	var environment: = world_environment.environment
 	Settings.apply_environment(environment)
+	# лёгкий туман: с высоты автобуса должна быть видна вся карта
+	if environment.fog_enabled:
+		environment.fog_density = 0.0045
+		environment.fog_sky_affect = 0.35
 	var sky: = environment.sky
 	if sky != null and sky.sky_material is ProceduralSkyMaterial:
 		var material: = sky.sky_material as ProceduralSkyMaterial
@@ -1203,11 +1311,25 @@ func _apply_quality_lighting() -> void :
 func _unhandled_input(event: InputEvent) -> void :
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key: = event as InputEventKey
-		if _build_enabled and phase == Phase.LIVE \
-				and (key.physical_keycode == KEY_Q \
-				or key.physical_keycode == KEY_E \
-				or key.physical_keycode == KEY_C):
-			_try_place_piece()
+		if _handle_build_key(key):
+			get_viewport().set_input_as_handled()
+			return
+	if event.is_action_pressed("jump") and phase == Phase.BUS:
+		_eject_from_bus()
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseButton and event.pressed \
+			and phase == Phase.LIVE and _build_enabled \
+			and build_manager != null and player.has_meta("br_build"):
+		var button: = event as InputEventMouseButton
+		if button.button_index == MOUSE_BUTTON_WHEEL_UP:
+			build_manager.set_mat(
+				(build_manager.mat_index + 2) % 3)
+			get_viewport().set_input_as_handled()
+			return
+		if button.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			build_manager.set_mat(
+				(build_manager.mat_index + 1) % 3)
 			get_viewport().set_input_as_handled()
 			return
 	if event.is_action_pressed("pause"):
@@ -1217,6 +1339,43 @@ func _unhandled_input(event: InputEvent) -> void :
 		elif phase == Phase.PAUSED:
 			_resume()
 			get_viewport().set_input_as_handled()
+
+
+func _handle_build_key(key: InputEventKey) -> bool:
+	# Q/Z/X/C — элементы стройки, G — проём, 1-3 — материал в режиме стройки.
+	if not _build_enabled or build_manager == null:
+		return false
+	if phase != Phase.LIVE:
+		return false
+	match key.physical_keycode:
+		KEY_Q:
+			build_manager.toggle_for("wall")
+			return true
+		KEY_Z:
+			build_manager.toggle_for("floor")
+			return true
+		KEY_X:
+			build_manager.toggle_for("stairs")
+			return true
+		KEY_C:
+			build_manager.toggle_for("roof")
+			return true
+		KEY_G:
+			build_manager.toggle_doorway()
+			return true
+		KEY_1, KEY_KP_1:
+			if player.has_meta("br_build"):
+				build_manager.set_mat(0)
+				return true
+		KEY_2, KEY_KP_2:
+			if player.has_meta("br_build"):
+				build_manager.set_mat(1)
+				return true
+		KEY_3, KEY_KP_3:
+			if player.has_meta("br_build"):
+				build_manager.set_mat(2)
+				return true
+	return false
 
 
 func _pause() -> void :
@@ -1229,6 +1388,8 @@ func _pause() -> void :
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	dm_hud.hide_scoreboard()
 	dm_hud.set_match_hud_visible(false)
+	if build_manager != null and build_manager.ghost != null:
+		build_manager.ghost.visible = false
 	var own: Dictionary = _stats.get(PLAYER_ID, {})
 	var mode_text: = "СО СТРОИТЕЛЬСТВОМ" if _build_enabled else "БЕЗ СТРОИТЕЛЬСТВА"
 	hud.set_pause_stats("БАТЛ РОЯЛЬ · %s · БЕЗ РЕЙТИНГА" % mode_text)

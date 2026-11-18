@@ -686,12 +686,14 @@ func _process(delta: float) -> void :
 		_start_reload()
 	if Input.is_action_just_pressed("inspect"):
 		viewmodel.play_inspect()
-	if Input.is_action_just_pressed("slot_primary"):
-		_switch_slot(SLOT_PRIMARY)
-	if Input.is_action_just_pressed("slot_secondary"):
-		_switch_slot(SLOT_SECONDARY)
-	if Input.is_action_just_pressed("slot_melee"):
-		_switch_slot(SLOT_MELEE)
+	# В режиме стройки BR слоты 1-3 выбирают материал, огонь подавлен.
+	if not has_meta("br_build"):
+		if Input.is_action_just_pressed("slot_primary"):
+			_switch_slot(SLOT_PRIMARY)
+		if Input.is_action_just_pressed("slot_secondary"):
+			_switch_slot(SLOT_SECONDARY)
+		if Input.is_action_just_pressed("slot_melee"):
+			_switch_slot(SLOT_MELEE)
 	if Input.is_action_just_pressed("spawn_mannequin"):
 		spawned_mannequin_requested.emit()
 
@@ -725,7 +727,9 @@ func _process(delta: float) -> void :
 			fire_held = _touch_fire
 			fire_just = _touch_fire_latch
 			_touch_fire_latch = false
-		if fire_just:
+		if has_meta("br_build"):
+			pass
+		elif fire_just:
 			_try_slash()
 		elif Input.is_action_just_pressed("aim") and viewmodel.has_heavy_attack():
 
@@ -738,7 +742,9 @@ func _process(delta: float) -> void :
 			wants_fire = _touch_fire
 			wants_fire_just = _touch_fire_latch
 			_touch_fire_latch = false
-		if _automatic:
+		if has_meta("br_build"):
+			pass
+		elif _automatic:
 			if wants_fire:
 				_try_fire()
 		elif wants_fire_just:
@@ -1515,6 +1521,9 @@ func _try_slash(heavy: = false) -> void :
 		var hit_position: Vector3 = fallback.get("position", origin)
 		var hit_normal: Vector3 = fallback.get("normal", - forward)
 		_spawn_impact(hit_position, hit_normal)
+		# удар по миру (добыча материалов в БАТЛ РОЯЛЕ)
+		fallback["headshot"] = false
+		melee_hit.emit(fallback)
 	else:
 		Sfx.play_miss()
 

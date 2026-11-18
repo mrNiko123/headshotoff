@@ -1,0 +1,7 @@
+﻿[gd_scene load_steps=2 format=3 uid="uid://ccheckbr001"]
+
+[ext_resource type="Script" path="res://tools/check_br.gd" id="1"]
+
+[node name="CheckBr" type="Node"]
+script = ExtResource("1")
+

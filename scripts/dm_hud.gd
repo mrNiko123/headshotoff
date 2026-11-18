@@ -56,6 +56,11 @@ var _killed_tween: Tween
 var _intro_overlay: Control
 var _intro_panel: PanelContainer
 var _intro_count: Label
+var _intro_kicker: Label
+var _intro_title: Label
+var _intro_map_line: Label
+var _intro_rules: Label
+var _intro_tip: Label
 
 var _scoreboard: Control
 var _sb_table: VBoxContainer
@@ -325,15 +330,18 @@ func _build_intro() -> void :
 		ACCENT_BRIGHT, 800)
 	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(kicker)
+	_intro_kicker = kicker
 
 	var title: = _label("DEATHMATCH", 58, TEXT, 800, true)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(title)
+	_intro_title = title
 
 	var map_line: = _label("ПЕРЕУЛОК «ПЛЮЩ»  ·  %d БОЙЦОВ  ·  5 МИНУТ" % FIGHTERS, 12, 
 		MUTED, 700)
 	map_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(map_line)
+	_intro_map_line = map_line
 
 	var rule: = ColorRect.new()
 	rule.custom_minimum_size = Vector2(0, 1)
@@ -346,6 +354,7 @@ func _build_intro() -> void :
 		11, TEXT, 700)
 	rules.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(rules)
+	_intro_rules = rules
 
 	var tip: = _label(
 		"Побеждает тот, кто наберёт больше всех очков за матч. "
@@ -356,6 +365,7 @@ func _build_intro() -> void :
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tip.custom_minimum_size = Vector2(560, 0)
 	column.add_child(tip)
+	_intro_tip = tip
 
 	_intro_count = _label("3", 54, ACCENT_BRIGHT, 800, true)
 	_intro_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -692,6 +702,20 @@ func show_intro() -> void :
 	_intro_overlay.modulate.a = 0.0
 	var tween: = create_tween()
 	tween.tween_property(_intro_overlay, "modulate:a", 1.0, 0.22)
+
+
+func configure_intro(kicker: String, title: String, map_line: String, 
+		rules: String, tip: String) -> void :
+	if _intro_kicker != null:
+		_intro_kicker.text = kicker
+	if _intro_title != null:
+		_intro_title.text = title
+	if _intro_map_line != null:
+		_intro_map_line.text = map_line
+	if _intro_rules != null:
+		_intro_rules.text = rules
+	if _intro_tip != null:
+		_intro_tip.text = tip
 
 
 
