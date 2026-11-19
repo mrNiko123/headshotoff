@@ -686,14 +686,13 @@ func _process(delta: float) -> void :
 		_start_reload()
 	if Input.is_action_just_pressed("inspect"):
 		viewmodel.play_inspect()
-	# В режиме стройки BR слоты 1-3 выбирают материал, огонь подавлен.
-	if not has_meta("br_build"):
-		if Input.is_action_just_pressed("slot_primary"):
-			_switch_slot(SLOT_PRIMARY)
-		if Input.is_action_just_pressed("slot_secondary"):
-			_switch_slot(SLOT_SECONDARY)
-		if Input.is_action_just_pressed("slot_melee"):
-			_switch_slot(SLOT_MELEE)
+	# Слоты 1-3.
+	if Input.is_action_just_pressed("slot_primary"):
+		_switch_slot(SLOT_PRIMARY)
+	if Input.is_action_just_pressed("slot_secondary"):
+		_switch_slot(SLOT_SECONDARY)
+	if Input.is_action_just_pressed("slot_melee"):
+		_switch_slot(SLOT_MELEE)
 	if Input.is_action_just_pressed("spawn_mannequin"):
 		spawned_mannequin_requested.emit()
 
@@ -727,9 +726,7 @@ func _process(delta: float) -> void :
 			fire_held = _touch_fire
 			fire_just = _touch_fire_latch
 			_touch_fire_latch = false
-		if has_meta("br_build"):
-			pass
-		elif fire_just:
+		if fire_just:
 			_try_slash()
 		elif Input.is_action_just_pressed("aim") and viewmodel.has_heavy_attack():
 
@@ -742,9 +739,7 @@ func _process(delta: float) -> void :
 			wants_fire = _touch_fire
 			wants_fire_just = _touch_fire_latch
 			_touch_fire_latch = false
-		if has_meta("br_build"):
-			pass
-		elif _automatic:
+		if _automatic:
 			if wants_fire:
 				_try_fire()
 		elif wants_fire_just:

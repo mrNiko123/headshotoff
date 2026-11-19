@@ -25,8 +25,6 @@ const GLOW_SHADER = preload("res://shaders/glow_radial.gdshader")
 
 const GAME_SCENE: = "res://game.tscn"
 const DUEL_SCENE: = "res://duel.tscn"
-const BR_SCENE: = "res://br.tscn"
-const BR_SETTINGS_PATH: = "res://br/data/br_settings.tres"
 
 const MENU_3D_FPS: = 30.0
 
@@ -1306,9 +1304,6 @@ func _render_page() -> void :
 		"rating":
 			_page_title.text = "РЕЙТИНГ"
 			_render_rating()
-		"br":
-			_page_title.text = "БАТЛ РОЯЛЬ"
-			_render_br_choice()
 		"inventory":
 			_page_title.text = "ИНВЕНТАРЬ"
 			_render_inventory()
@@ -1342,166 +1337,11 @@ func _render_play() -> void :
 	_page_body.add_child(row)
 
 	row.add_child(_freeplay_card())
-	row.add_child(_battle_royale_card())
 
 	_page_body.add_child(_spacer(2))
 	_page_body.add_child(_label(
 		"Рейтинг: ИГРАТЬ → РЕЙТИНГ — случайная карта и оружие на матч.", 
 		&"KickerLabel", 10, UITheme.MENU_MUTED))
-
-
-func _battle_royale_card() -> Button:
-	var enabled: = bool(_br_building_enabled())
-	var card: = _mode_card(false)
-	card.pressed.connect( func() -> void : _open_page("br"))
-
-	var column: = _mode_card_column(card)
-
-	var banner: = PanelContainer.new()
-	banner.custom_minimum_size = Vector2(0, 186)
-	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	banner.add_theme_stylebox_override("panel", _flat_box(
-		Color(0.13, 0.075, 0.02, 1.0), UITheme.MENU_BORDER, 1, 6, 0.0))
-	var banner_label: = _label("BATTLE ROYALE", &"DisplayLabel", 30, 
-		UITheme.GOLD_BRIGHT)
-	banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	banner.add_child(banner_label)
-	column.add_child(banner)
-
-	var title_row: = HBoxContainer.new()
-	title_row.add_theme_constant_override("separation", 8)
-	title_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(title_row)
-
-	var title: = _label("БАТЛ РОЯЛЬ", &"DisplayLabel", 21, UITheme.MENU_TEXT)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.clip_text = true
-	title_row.add_child(title)
-	title_row.add_child(_mode_chip("20 БОЙЦОВ", UITheme.MENU_MUTED, 
-		UITheme.MENU_BORDER))
-
-	column.add_child(_label("АВТОБУС  ·  ЗОНА  ·  ЛУТ", 
-		&"KickerLabel", 10, UITheme.MENU_MUTED))
-
-	var desc: = _label(
-		"Большой матч: прыжок с автобуса, поиск оружия, сужающаяся "
-			+ "зона и 19 противников. Побеждает последний выживший. ", 
-		&"Label", 12, UITheme.MENU_TEXT)
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.custom_minimum_size = Vector2(0, 88)
-	desc.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	column.add_child(desc)
-
-	var tags: = HBoxContainer.new()
-	tags.add_theme_constant_override("separation", 6)
-	tags.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(tags)
-	tags.add_child(_mode_chip(
-		"СО СТРОИТЕЛЬСТВОМ" if enabled else "БЕЗ СТРОИТЕЛЬСТВА", 
-		UITheme.MENU_MUTED, UITheme.MENU_BORDER))
-	tags.add_child(_mode_chip("БЕЗ РЕЙТИНГА", UITheme.MENU_MUTED, 
-		UITheme.MENU_BORDER))
-
-	column.add_child(_spacer(0, true))
-	column.add_child(_mode_action("ВЫБРАТЬ ПОДРЕЖИМ  →", UITheme.MENU_MUTED))
-	return card
-
-
-func _render_br_choice() -> void :
-	_page_body.add_child(_label(
-		"Два подрежима: со строительством (стены, пол, лестницы, крыши, "
-			+ "материалы) и без — только укрытия на карте. Остальной матч "
-			+ "одинаковый.", 
-		&"Label", 12, UITheme.MENU_MUTED))
-
-	var row: = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 18)
-	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_page_body.add_child(row)
-	row.add_child(_br_mode_card(true))
-	row.add_child(_br_mode_card(false))
-
-	_page_body.add_child(_spacer(2))
-	_page_body.add_child(_label(
-		"ПРОБЕЛ — ПРЫЖОК С АВТОБУСА. В режиме стройки: Q/Z/X/C — "
-			+ "элементы, ЛКМ — поставить, 1-3 — материал, G — проём.", 
-		&"KickerLabel", 10, UITheme.MENU_MUTED))
-
-
-func _br_mode_card(building: bool) -> Button:
-	var card: = _mode_card(false)
-	card.pressed.connect( func() -> void : _start_battle_royale(building))
-
-	var column: = _mode_card_column(card)
-
-	var title: = _label(
-		"СО СТРОИТЕЛЬСТВОМ" if building else "БЕЗ СТРОИТЕЛЬСТВА", 
-		&"DisplayLabel", 19, UITheme.MENU_TEXT)
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	column.add_child(title)
-
-	column.add_child(_label("БАТЛ РОЯЛЬ", &"KickerLabel", 10, 
-		UITheme.MENU_MUTED))
-
-	var desc: = _label(
-		("Стройка стен, полов, лестниц и крыш из дерева, камня и "
-			+ "металла. Добывай материалы ножом, ставь стены под огнём, "
-			+ "собирай башню и пробивай проёмы клавишей G.") if building else (
-			"Только оружие и укрытия. Материалы не собираются, панель "
-			+ "стройки скрыта, а на карте больше ящиков, стен, камней "
-			+ "и машин — прячься за ними и выживай."), 
-		&"Label", 12, UITheme.MENU_TEXT)
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.custom_minimum_size = Vector2(0, 132)
-	desc.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	column.add_child(desc)
-
-	var tags: = HBoxContainer.new()
-	tags.add_theme_constant_override("separation", 6)
-	tags.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(tags)
-	if building:
-		tags.add_child(_mode_chip("Q/Z/X/C + ЛКМ", UITheme.MENU_MUTED, 
-			UITheme.MENU_BORDER))
-		tags.add_child(_mode_chip("1-3 МАТЕРИАЛ", UITheme.MENU_MUTED, 
-			UITheme.MENU_BORDER))
-	else:
-		tags.add_child(_mode_chip("БЕЗ ПАНЕЛИ МАТЕРИАЛОВ", 
-			UITheme.MENU_MUTED, UITheme.MENU_BORDER))
-		tags.add_child(_mode_chip("БОЛЬШЕ УКРЫТИЙ", UITheme.MENU_MUTED, 
-			UITheme.MENU_BORDER))
-
-	column.add_child(_spacer(0, true))
-	column.add_child(_mode_action("В БОЙ  →", UITheme.MENU_MUTED))
-	return card
-
-
-func _br_building_enabled() -> bool:
-	var res: Resource = load(BR_SETTINGS_PATH)
-	if res != null:
-		var value: Variant = res.get("building_enabled")
-		if value != null:
-			return bool(value)
-	return true
-
-
-func _start_battle_royale(building: bool) -> void :
-	if _transitioning:
-		return
-	var res: Resource = load(BR_SETTINGS_PATH)
-	if res == null:
-		res = Resource.new()
-	res.set("building_enabled", building)
-	ResourceSaver.save(res, BR_SETTINGS_PATH)
-	Settings.br_build = building
-	_transitioning = true
-	Settings.save_settings()
-	_fade.visible = true
-	var tween: = create_tween()
-	tween.tween_property(_fade, "modulate:a", 1.0, 0.22)
-	await tween.finished
-	get_tree().change_scene_to_file(BR_SCENE)
 
 
 func _freeplay_card() -> Button:

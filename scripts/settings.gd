@@ -309,7 +309,6 @@ var show_input_overlay: = false
 
 var map_id: = MAP_DEFAULT
 var game_mode: = "dm"
-var br_build: = true
 
 var crosshair_color: = Color(0.32, 1.0, 0.48, 1.0)
 var crosshair_gap: = 5.0
@@ -681,7 +680,6 @@ func load_settings() -> void :
 		game_mode = str(config.get_value("game", "mode", "dm"))
 		if game_mode != "tdm":
 			game_mode = "dm"
-		br_build = bool(config.get_value("game", "br_build", true))
 
 		total_shots = int(config.get_value("stats", "shots", 0))
 		coins = maxi(int(config.get_value("economy", "coins", 2500)), 0)
@@ -1300,7 +1298,6 @@ func _make_config() -> ConfigFile:
 	config.set_value("hud", "show_input_overlay", show_input_overlay)
 	config.set_value("game", "map", map_id)
 	config.set_value("game", "mode", game_mode)
-	config.set_value("game", "br_build", br_build)
 	config.set_value("stats", "shots", total_shots)
 	config.set_value("stats", "hits", total_hits)
 	config.set_value("stats", "kills", total_kills)
