@@ -13,6 +13,7 @@ const WorldViewScript = preload("res://scripts/world_view.gd")
 const WorldTint = preload("res://scripts/world_tint.gd")
 const WorldTintShader = preload("res://shaders/world_tint.gdshader")
 const RagdollScript = preload("res://scripts/ragdoll.gd")
+const PlayerSkinData = preload("res://scripts/player_skin_data.gd")
 const WeaponData = preload("res://scripts/weapon_data.gd")
 const MapData = preload("res://scripts/map_data.gd")
 
@@ -643,19 +644,7 @@ func _process(_delta: float) -> void :
 
 
 func _spawn_death_body() -> void :
-	var colors: = {
-		"torso": Color(0.62, 0.085, 0.075, 1.0), 
-		"shirt": Color(1.0, 0.16, 0.09, 1.0), 
-		"pants": Color(0.235, 0.035, 0.03, 1.0), 
-		"pants_dark": Color(0.175, 0.03, 0.026, 1.0), 
-		"boots": Color(0.115, 0.08, 0.075, 1.0), 
-		"skin": Color(0.76, 0.555, 0.41, 1.0), 
-		"glove": Color(0.23, 0.035, 0.03, 1.0), 
-		"helmet": Color(0.42, 0.05, 0.045, 1.0), 
-		"accent": Color(1.0, 0.12, 0.08, 1.0), 
-		"eye": Color(1.0, 0.3, 0.18, 1.0), 
-		"sole": Color(0.06, 0.045, 0.045, 1.0), 
-	}
+	var colors: Dictionary = PlayerSkinData.ragdoll_colors(Settings.player_skin)
 	var from: Vector3 = player.global_position - Vector3(0.0, 0.0, 1.0)
 	if is_instance_valid(bot):
 		from = bot.global_position

@@ -19,6 +19,7 @@ const MapData = preload("res://scripts/map_data.gd")
 const ConfigCode = preload("res://scripts/config_code.gd")
 const CountryData = preload("res://scripts/country_data.gd")
 const BotNames = preload("res://scripts/bot_names.gd")
+const PlayerSkinData = preload("res://scripts/player_skin_data.gd")
 
 const CONFIG_PATH: = "user://headshot_settings.cfg"
 
@@ -377,6 +378,8 @@ var pistol_skin: = PISTOL_SKIN
 var knife_skin: = MELEE_SKIN
 
 var owned_items: Array[String] = []
+var owned_player_skins: Array[String] = [PlayerSkinData.DEFAULT_ID]
+var player_skin: = PlayerSkinData.DEFAULT_ID
 var keybinds: Dictionary = {}
 
 var total_shots: = 0
@@ -646,6 +649,7 @@ func load_settings() -> void :
 
 	keybinds = DEFAULT_BINDS.duplicate()
 	owned_items.clear()
+	owned_player_skins.clear()
 
 	if loaded:
 		nickname = str(config.get_value("profile", "nickname", "PLAYER")).strip_edges().substr(0, 16)
@@ -796,6 +800,15 @@ func load_settings() -> void :
 			for entry in owned_value:
 				owned_items.append(str(entry))
 
+		var skins_value: Variant = config.get_value("skins", "owned", PackedStringArray())
+		if skins_value is PackedStringArray:
+			for entry in skins_value:
+				owned_player_skins.append(str(entry))
+		elif skins_value is Array:
+			for entry in skins_value:
+				owned_player_skins.append(str(entry))
+		player_skin = str(config.get_value("skins", "equipped", PlayerSkinData.DEFAULT_ID))
+
 		var binds_value: Variant = config.get_value("keys", "binds", {})
 		if binds_value is Dictionary:
 			for action in binds_value:
@@ -814,6 +827,10 @@ func load_settings() -> void :
 	# Ножи из LOCKED_START_ITEMS больше не выдаются бесплатно — только кейсы/рынок.
 	for legacy_key in LOCKED_START_ITEMS:
 		owned_items.erase(str(legacy_key))
+
+	if not owned_player_skins.has(PlayerSkinData.DEFAULT_ID):
+		owned_player_skins.append(PlayerSkinData.DEFAULT_ID)
+	_validate_player_skin()
 
 	_validate_loadout()
 	apply_volume()
@@ -1375,6 +1392,8 @@ func _make_config() -> ConfigFile:
 	config.set_value("loadout", "pistol_skin", pistol_skin)
 	config.set_value("loadout", "knife_skin", knife_skin)
 	config.set_value("inventory", "owned", PackedStringArray(owned_items))
+	config.set_value("skins", "owned", PackedStringArray(owned_player_skins))
+	config.set_value("skins", "equipped", player_skin)
 	config.set_value("economy", "coins", coins)
 	config.set_value("keys", "binds", keybinds)
 	config.set_value("mobile", "layout_slots", mobile_layout_slots)
@@ -1855,6 +1874,41 @@ func reset_viewmodel() -> void :
 
 func owns_item(weapon_id: String, skin_id: String) -> bool:
 	return owned_items.has("%s|%s" % [weapon_id, skin_id])
+
+
+func owns_player_skin(skin_id: String) -> bool:
+	return owned_player_skins.has(skin_id)
+
+
+func buy_player_skin(skin_id: String) -> bool:
+	if not PlayerSkinData.has_skin(skin_id):
+		return false
+	if owns_player_skin(skin_id):
+		return false
+	var skin: Dictionary = PlayerSkinData.get_skin(skin_id)
+	var price: = int(skin.get("price", 0))
+	if price > 0 and not spend_coins(price):
+		return false
+	owned_player_skins.append(skin_id)
+	queue_save_settings()
+	settings_changed.emit()
+	return true
+
+
+func equip_player_skin(skin_id: String) -> bool:
+	if not owns_player_skin(skin_id):
+		return false
+	player_skin = skin_id
+	queue_save_settings()
+	settings_changed.emit()
+	return true
+
+
+func _validate_player_skin() -> void :
+	if not PlayerSkinData.has_skin(player_skin) \
+	or not owned_player_skins.has(player_skin):
+		player_skin = PlayerSkinData.DEFAULT_ID
+
 
 
 func grant_item(weapon_id: String, skin_id: String) -> bool:

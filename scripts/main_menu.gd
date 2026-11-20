@@ -21,6 +21,8 @@ const RatingButton = preload("res://scripts/rating_button.gd")
 const OnlineCounter = preload("res://scripts/online_counter.gd")
 const CountryData = preload("res://scripts/country_data.gd")
 const CountryFlag = preload("res://scripts/country_flag.gd")
+const PlayerSkinData = preload("res://scripts/player_skin_data.gd")
+const PlayerPreview = preload("res://scripts/player_preview.gd")
 const GLOW_SHADER = preload("res://shaders/glow_radial.gdshader")
 
 const GAME_SCENE: = "res://game.tscn"
@@ -564,18 +566,32 @@ func _glow_material(color: Color, strength: float) -> ShaderMaterial:
 func _refresh_menu_knife() -> void :
 	if _menu_knife_holder == null:
 		return
-	var weapon_key: = Settings.weapon_skin
-	if _menu_knife_skin == weapon_key and _menu_knife_holder.get_child_count() > 0:
+	var skin_key: = Settings.player_skin
+	if _menu_knife_skin == skin_key and _menu_knife_holder.get_child_count() > 0:
 		return
-	_menu_knife_skin = weapon_key
+	_menu_knife_skin = skin_key
 	for child in _menu_knife_holder.get_children():
 		_menu_knife_holder.remove_child(child)
 		child.queue_free()
-	# Герой меню: манекен стоит на лего-карте (без оружия)
-	var mannequin_scene: = preload("res://scenes/mannequin.tscn") as PackedScene
-	if mannequin_scene == null:
+	# Герой меню: экипированный скин игрока (модель скина или манекен).
+	var hero: Node3D = null
+	var model_path: = PlayerSkinData.model_path(skin_key)
+	if not model_path.is_empty() and ResourceLoader.exists(model_path):
+		var mesh: Mesh = load(model_path) as Mesh
+		if mesh != null:
+			PlayerSkinData.brighten_mesh(mesh)
+			var body: = MeshInstance3D.new()
+			body.mesh = mesh
+			hero = Node3D.new()
+			hero.add_child(body)
+	if hero == null:
+		var mannequin_scene: = preload("res://scenes/mannequin.tscn") as PackedScene
+		if mannequin_scene == null:
+			return
+		hero = mannequin_scene.instantiate() as Node3D
+	if hero == null:
 		return
-	var hero: Node3D = mannequin_scene.instantiate() as Node3D
+	hero.rotation.y = PI
 	_menu_knife_holder.add_child(hero)
 	hero.scale = Vector3.ONE * 0.46
 	hero.position = Vector3(0.0, 0.0, 0.0)
@@ -2294,6 +2310,9 @@ func _render_inventory() -> void :
 		"shop":
 			_render_shop()
 			return
+		"skins":
+			_render_skins()
+			return
 		"market":
 			_render_market()
 			return
@@ -2462,7 +2481,7 @@ func _build_store_tabs() -> void :
 	var row: = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	_page_body.add_child(row)
-	for entry in [["inv", "ИНВЕНТАРЬ"], ["shop", "МАГАЗИН"], ["market", "РЫНОК"]]:
+	for entry in [["inv", "ИНВЕНТАРЬ"], ["shop", "МАГАЗИН"], ["skins", "СКИНЫ"], ["market", "РЫНОК"]]:
 		var tab: = Button.new()
 		tab.text = str(entry[1])
 		tab.custom_minimum_size = Vector2(150, 44)
@@ -2507,6 +2526,112 @@ func _roll_case(weights: Dictionary) -> Array:
 		pick -= share
 	var fallback: = WeaponData.ITEMS[0]
 	return [str(fallback["weapon"]), str(fallback["skin"])]
+
+
+func _render_skins() -> void :
+	_page_body.add_child(_label(
+		"Скины игрока меняют внешний вид персонажа: герой меню, превью " 
+			+ "и тело при смерти. Это не оружейные скины — продать или " 
+			+ "купить их на рынке нельзя, только здесь.", 
+		&"Label", 12, UITheme.MENU_MUTED))
+
+	var grid: = GridContainer.new()
+	grid.columns = 3
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	_page_body.add_child(grid)
+	for skin in PlayerSkinData.all():
+		grid.add_child(_player_skin_card(skin))
+
+	_page_body.add_child(_spacer(2))
+	_page_body.add_child(_label(
+		"РЫНОК: ТОЛЬКО ОРУЖИЕ. СКИНЫ ИГРОКА НЕ ПРОДАЮТСЯ И НЕ ПОКУПАЮТСЯ.", 
+		&"KickerLabel", 10, UITheme.GOLD))
+
+
+func _player_skin_card(skin: Dictionary) -> PanelContainer:
+	var skin_id: = str(skin.get("id", PlayerSkinData.DEFAULT_ID))
+	var rarity: Dictionary = WeaponData.get_rarity(skin)
+	var rarity_color: Color = rarity.get("color", UITheme.MENU_MUTED)
+	var owned: bool = Settings.owns_player_skin(skin_id)
+	var equipped: bool = Settings.player_skin == skin_id
+	var price: = int(skin.get("price", 0))
+
+	var card: = PanelContainer.new()
+	card.custom_minimum_size = Vector2(0, 300)
+	card.add_theme_stylebox_override("panel", _item_box(rarity_color, equipped))
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var column: = VBoxContainer.new()
+	column.add_theme_constant_override("separation", 6)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(column)
+
+	var preview: = PlayerPreview.new()
+	preview.setup(skin_id)
+	preview.custom_minimum_size = Vector2(0, 168)
+	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(preview)
+
+	var head: = HBoxContainer.new()
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(head)
+	var name_label: = _label(str(skin.get("name", "СКИН")), &"DisplayMedium", 20, 
+		UITheme.MENU_TEXT)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(name_label)
+	head.add_child(_label(str(skin.get("tag", "")), &"KickerLabel", 9, rarity_color))
+
+	var desc: = _label(str(skin.get("desc", "")), &"Label", 11, UITheme.MENU_MUTED)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size = Vector2(0, 62)
+	desc.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	column.add_child(desc)
+
+	var bar: = ColorRect.new()
+	bar.color = rarity_color
+	bar.custom_minimum_size = Vector2(0, 3)
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(bar)
+
+	column.add_child(_spacer(2))
+	var button: = Button.new()
+	button.custom_minimum_size = Vector2(0, 40)
+	if not owned:
+		button.text = "КУПИТЬ · %d МОНЕТ" % price
+		button.theme_type_variation = &"AccentButton"
+		button.disabled = Settings.coins < price
+		button.pressed.connect( func() -> void : _buy_player_skin(skin_id))
+	elif equipped:
+		button.text = "ЭКИПИРОВАНО"
+		button.theme_type_variation = &"SmallButton"
+		button.disabled = true
+	else:
+		button.text = "ЭКИПИРОВАТЬ"
+		button.theme_type_variation = &"AccentButton"
+		button.pressed.connect( func() -> void : _equip_player_skin(skin_id))
+	column.add_child(button)
+	return card
+
+
+func _buy_player_skin(skin_id: String) -> void :
+	var skin: Dictionary = PlayerSkinData.get_skin(skin_id)
+	if not Settings.buy_player_skin(skin_id):
+		_toast("НЕ ХВАТАЕТ МОНЕТ")
+		return
+	Settings.equip_player_skin(skin_id)
+	_toast("КУПЛЕНО: СКИН %s" % str(skin.get("name", "")))
+	_render_page()
+
+
+func _equip_player_skin(skin_id: String) -> void :
+	if not Settings.equip_player_skin(skin_id):
+		_toast("СКИН НЕ КУПЛЕН")
+		return
+	var skin: Dictionary = PlayerSkinData.get_skin(skin_id)
+	_toast("ЭКИПИРОВАНО: %s" % str(skin.get("name", "")))
+	_render_page()
 
 
 func _render_shop() -> void :
@@ -2570,8 +2695,13 @@ func _render_market() -> void :
 		_render_page())
 	row.add_child(refresh)
 	row.add_child(_expander())
-	row.add_child(_label("ПРОДАЖА — КНОПКА В КАРТОЧКЕ ИНВЕНТАРЯ", &"KickerLabel", 10, 
-		UITheme.MENU_MUTED))
+	row.add_child(_label("ПРОДАЖА ОРУЖИЯ — КНОПКА В КАРТОЧКЕ ИНВЕНТАРЯ", 
+		&"KickerLabel", 10, UITheme.MENU_MUTED))
+
+	_page_body.add_child(_label(
+		"СКИНЫ ИГРОКА (НАПРИМЕР «АНГЕЛ») НА РЫНКЕ НЕ ТОРГУЮТСЯ — " 
+			+ "ИХ НЕЛЬЗЯ НИ КУПИТЬ, НИ ПРОДАТЬ ЗДЕСЬ. ТОЛЬКО ВКЛАДКА «СКИНЫ».", 
+		&"KickerLabel", 10, UITheme.GOLD))
 
 	_market_ensure_listings()
 	var grid: = GridContainer.new()
