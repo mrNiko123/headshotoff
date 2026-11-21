@@ -241,6 +241,7 @@ var _scoped: = false
 
 
 var _can_scope: = true
+var fire_locked: = false
 
 
 var _crouch_latched: = false
@@ -726,7 +727,7 @@ func _process(delta: float) -> void :
 			fire_held = _touch_fire
 			fire_just = _touch_fire_latch
 			_touch_fire_latch = false
-		if fire_just:
+		if fire_just and not fire_locked:
 			_try_slash()
 		elif Input.is_action_just_pressed("aim") and viewmodel.has_heavy_attack():
 
@@ -740,9 +741,9 @@ func _process(delta: float) -> void :
 			wants_fire_just = _touch_fire_latch
 			_touch_fire_latch = false
 		if _automatic:
-			if wants_fire:
+			if wants_fire and not fire_locked:
 				_try_fire()
-		elif wants_fire_just:
+		elif wants_fire_just and not fire_locked:
 			_try_fire()
 
 	_speed = Vector2(velocity.x, velocity.z).length()

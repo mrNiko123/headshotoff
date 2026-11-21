@@ -15,7 +15,7 @@ const ROUNDS_TO_WIN: = 3
 const ROUND_TIME: = 115.0
 const PLANT_TIME: = 3.0
 const BOMB_TIME: = 40.0
-const DEFUSE_TIME: = 6.0
+const DEFUSE_TIME: = 10.0
 const DEFUSE_RANGE: = 2.6
 const BOT_WEAPON: = "ak47"
 const PLAYER_MAX_HEALTH: = 100.0
@@ -171,6 +171,7 @@ func _tick_live(delta: float) -> void :
 
 	var site: int = map.call("site_at", player.global_position)
 	var holding: bool = Input.is_action_pressed("plant_bomb")
+	player.fire_locked = _plant_progress > 0.01
 	if site >= 0 and holding and _player_alive:
 		_plant_progress = minf(PLANT_TIME, _plant_progress + delta)
 	else:
@@ -247,6 +248,7 @@ func _plant_bomb() -> void :
 	_plant_progress = 0.0
 	_spawn_bomb_marker()
 	hud.set_session_time(BOMB_TIME)
+	player.fire_locked = false
 	_shown_bomb = ""
 	_update_bomb_text()
 	hud.show_duel_banner("БОМБА ЗАЛОЖЕНА", TINT_WARN)
@@ -268,6 +270,7 @@ func _finish_round(player_won: bool, reason: String) -> void :
 	if phase == Phase.ENDED:
 		return
 	phase = Phase.ENDED
+	player.fire_locked = false
 	if _defuser != null and is_instance_valid(_defuser):
 		_defuser.active = true
 	_defuser = null
@@ -365,8 +368,8 @@ func _on_bot_died(dead_bot: Node3D) -> void :
 	for bot in _bots:
 		if is_instance_valid(bot) and bool(bot.alive):
 			alive_count += 1
-	if alive_count == 0 and phase == Phase.LIVE:
-		hud.toast("ВСЕ CT УСТРАНЕНЫ — СВОБОДНАЯ ЗАКЛАДКА")
+	if alive_count == 0 and (phase == Phase.LIVE or phase == Phase.PLANTED):
+		_finish_round(true, "ВСЕ CT УСТРАНЕНЫ")
 
 
 func _spawn_bomb_marker() -> void :
