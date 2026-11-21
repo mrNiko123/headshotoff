@@ -27,6 +27,7 @@ const GLOW_SHADER = preload("res://shaders/glow_radial.gdshader")
 
 const GAME_SCENE: = "res://game.tscn"
 const DUEL_SCENE: = "res://duel.tscn"
+const BOMB_SCENE: = "res://bomb.tscn"
 
 const MENU_3D_FPS: = 30.0
 
@@ -909,6 +910,18 @@ func _start_game() -> void :
 	get_tree().change_scene_to_file(GAME_SCENE)
 
 
+func _start_bomb() -> void :
+	if _transitioning:
+		return
+	_transitioning = true
+	Settings.save_settings()
+	_fade.visible = true
+	var tween: = create_tween()
+	tween.tween_property(_fade, "modulate:a", 1.0, 0.22)
+	await tween.finished
+	get_tree().change_scene_to_file(BOMB_SCENE)
+
+
 func _start_duel() -> void :
 	if _transitioning:
 		return
@@ -1353,6 +1366,8 @@ func _render_play() -> void :
 	_page_body.add_child(row)
 
 	row.add_child(_freeplay_card())
+	row.add_child(_bomb_card())
+	row.add_child(_bomb_card())
 
 	_page_body.add_child(_spacer(2))
 	_page_body.add_child(_label(
@@ -1415,6 +1430,55 @@ func _freeplay_card() -> Button:
 
 	column.add_child(_spacer(0, true))
 	column.add_child(_mode_action("ВЫБРАТЬ КАРТУ  →", UITheme.MENU_MUTED))
+	return card
+
+
+func _bomb_card() -> Button:
+	var card: = _mode_card(false)
+	card.pressed.connect( func() -> void : _start_bomb())
+	var column: = _mode_card_column(card)
+
+	var preview: = TextureRect.new()
+	preview.custom_minimum_size = Vector2(0, 186)
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var preview_path: = "res://tools/view_dust2_ground.png"
+	if ResourceLoader.exists(preview_path):
+		preview.texture = load(preview_path)
+	column.add_child(preview)
+
+	var title_row: = HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 8)
+	title_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(title_row)
+	var title: = _label("ЗАКЛАДКА БОМБЫ", &"DisplayLabel", 21, UITheme.MENU_TEXT)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.clip_text = true
+	title_row.add_child(title)
+	title_row.add_child(_mode_chip("DE_DUST2", UITheme.GOLD, UITheme.MENU_BORDER))
+
+	column.add_child(_label("T ПРОТИВ 3 CT  ·  40 СЕК", 
+		&"KickerLabel", 10, UITheme.MENU_MUTED))
+
+	var desc: = _label(
+		"Ты — террорист с бомбой. Дойди до сайта A или B, удерживай E три "
+			+ "секунды и не дай ботам разминировать. До трёх побед в раундах.", 
+		&"Label", 12, UITheme.MENU_TEXT)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size = Vector2(0, 72)
+	desc.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	column.add_child(desc)
+
+	var tags: = HBoxContainer.new()
+	tags.add_theme_constant_override("separation", 6)
+	tags.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(tags)
+	tags.add_child(_mode_chip("БОМБА", UITheme.GOLD, UITheme.MENU_BORDER))
+	tags.add_child(_mode_chip("БОТЫ", UITheme.MENU_MUTED, UITheme.MENU_BORDER))
+
+	column.add_child(_spacer(0, true))
+	column.add_child(_mode_action("НАЧАТЬ  →", UITheme.GOLD))
 	return card
 
 
